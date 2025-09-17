@@ -1,0 +1,66 @@
+name: Permintaan Fitur
+description: Ajukan ide atau permintaan fitur baru.
+title: "[FEATURE] <judul singkat>"
+labels:
+  - enhancement
+  - needs-triage
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih atas idenya! Mohon isi formulir berikut.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pra-pemeriksaan
+      options:
+        - label: Saya sudah mencari isu serupa dan tidak menemukan duplikat.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Permasalahan yang ingin diselesaikan
+      description: Jelaskan masalah/pain point yang dialami pengguna.
+      placeholder: Saat ini sulit untuk ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solusi/fitur yang diusulkan
+      description: Jelaskan bagaimana fitur ini bekerja dari sudut pandang pengguna.
+      placeholder: Tambahkan tombol ..., lalu ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatif yang telah dipertimbangkan
+      description: Opsi lain yang pernah dicoba/terpikirkan.
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Mockup / referensi
+      description: Tautan/gambar referensi atau mockup sederhana.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Kriteria penerimaan (acceptance criteria)
+      description: Daftar syarat agar fitur dianggap selesai.
+      placeholder: |
+        - Dapat melakukan ...
+        - Menampilkan ...
+
+  - type: input
+    id: impact
+    attributes:
+      label: Dampak bisnis/prioritas (opsional)
+      placeholder: Tinggi/Sedang/Rendah + alasan singkat
+

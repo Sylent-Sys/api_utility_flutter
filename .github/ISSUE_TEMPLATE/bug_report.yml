@@ -1,0 +1,89 @@
+name: Laporan Bug / Error
+description: Laporkan bug, error, atau perilaku yang tidak sesuai.
+title: "[BUG] <judul singkat>"
+labels:
+  - bug
+  - needs-triage
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih telah melaporkan bug! Mohon isi formulir ini dengan jelas.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pra-pemeriksaan
+      options:
+        - label: Saya sudah mencari isu serupa dan tidak menemukan duplikat.
+          required: true
+        - label: Saya sudah mencoba pada branch/versi terbaru.
+          required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Versi / Commit
+      description: Versi aplikasi/commit SHA yang digunakan.
+      placeholder: contoh "v1.2.3" atau "abcdef1"
+
+  - type: textarea
+    id: desc
+    attributes:
+      label: Deskripsi bug
+      description: Jelaskan bug yang terjadi secara singkat dan jelas.
+      placeholder: Apa yang salah terjadi?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Langkah untuk mereproduksi
+      description: Urutkan langkah-langkah agar kami bisa mereproduksi bug.
+      placeholder: |
+        1. Buka ...
+        2. Klik ...
+        3. Lihat error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Perilaku yang diharapkan
+      description: Apa yang seharusnya terjadi?
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Tangkapan layar / rekaman
+      description: Tambahkan gambar/rekaman bila relevan.
+      placeholder: Seret dan lepas file di sini
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log/stacktrace
+      description: Sertakan log atau stacktrace terkait (gunakan code block).
+      render: shell
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Lingkungan
+      description: Detail OS, versi Flutter/Dart, perangkat, dll.
+      placeholder: |
+        - OS: Windows 11
+        - Flutter: 3.x.x, Dart 3.x.x
+        - Perangkat: Desktop/Android/iOS
+
+  - type: input
+    id: contact
+    attributes:
+      label: Info kontak (opsional)
+      description: Misalnya email atau username untuk tindak lanjut.
+

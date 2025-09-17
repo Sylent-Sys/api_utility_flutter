@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Dokumentasi Proyek
+    url: https://github.com/sylent-sys/api_utility_flutter#readme
+    about: Baca dokumentasi/README sebelum membuat isu baru.
+  - name: Ajukan pertanyaan melalui Issue
+    url: https://github.com/sylent-sys/api_utility_flutter/issues/new/choose
+    about: Gunakan template Pertanyaan / Isu Umum untuk Q&A.
+

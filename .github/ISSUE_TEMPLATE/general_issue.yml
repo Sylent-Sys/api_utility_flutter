@@ -1,0 +1,33 @@
+name: Pertanyaan / Isu Umum
+description: Gunakan ini untuk pertanyaan umum, klarifikasi, atau isu non-bug.
+title: "[QUESTION] <judul singkat>"
+labels:
+  - question
+  - needs-triage
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gunakan template ini untuk topik yang bukan bug dan bukan permintaan fitur.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Konteks
+      description: Latar belakang singkat agar tim memahami kebutuhan Anda.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Pertanyaan / Isu
+      description: Jelaskan pertanyaan atau isu Anda secara jelas.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Informasi tambahan
+      description: Tautan terkait, contoh kode, atau hal lain yang mendukung.
+
