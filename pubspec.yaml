@@ -68,11 +68,11 @@ dev_dependencies:
   msix: ^3.16.12
 
 msix_config:
-  display_name: API Utility Flutter
-  publisher_display_name: Sylent-Sys
-  identity_name: com.sylentsys.apiutilityflutter
-  msix_version: 1.0.0.0
-  logo_path: windows\runner\resources\app_icon.ico
+  display_name: "API Utility Flutter"
+  publisher_display_name: "Sylent-Sys"
+  identity_name: "com.sylentsys.apiutilityflutter"
+  msix_version: "1.0.0.0"
+  logo_path: "windows/runner/resources/app_icon.ico"
   start_menu: true
   enable_at_startup: false
   install_certificate: true
