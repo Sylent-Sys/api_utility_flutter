@@ -57,20 +57,11 @@ jobs:
         echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_OUTPUT
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
         
-    - name: Upload release asset
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-release
-        path: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
-        
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
-        release_name: API Utility Flutter ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
+        name: API Utility Flutter ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
         body: |
           ## API Utility Flutter ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
           
@@ -91,13 +82,6 @@ jobs:
           See the commit history for detailed changes.
         draft: false
         prerelease: false
-        
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
+        files: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
-        asset_name: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
-        asset_content_type: application/zip
