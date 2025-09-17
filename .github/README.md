@@ -12,7 +12,7 @@ This repository contains several GitHub Actions workflows to automate the develo
 
 **What it does:**
 - Runs tests and code analysis
-- Builds the app for Windows, Linux, and macOS
+- Builds the app for Windows only
 - Uploads test coverage to Codecov
 - Verifies code formatting
 
@@ -91,16 +91,6 @@ This will automatically trigger the release workflow.
 - MSBuild
 - Flutter SDK
 
-### For Linux Builds
-- clang
-- cmake
-- ninja-build
-- pkg-config
-- libgtk-3-dev
-- liblzma-dev
-
-### For macOS Builds
-- Xcode (automatically available on GitHub Actions macOS runners)
 
 ## Output Files
 
@@ -130,7 +120,7 @@ The workflows require the following permissions:
 
 ### Adding More Platforms
 
-To add support for other platforms (Android, iOS, Web), modify the release workflow:
+To add support for other platforms (Android, iOS, Web, Linux, macOS), modify the release workflow:
 
 ```yaml
 - name: Build Android app
@@ -141,6 +131,12 @@ To add support for other platforms (Android, iOS, Web), modify the release workf
   
 - name: Build Web app
   run: flutter build web --release
+  
+- name: Build Linux app
+  run: flutter build linux --release
+  
+- name: Build macOS app
+  run: flutter build macos --release
 ```
 
 ### Custom Release Notes
