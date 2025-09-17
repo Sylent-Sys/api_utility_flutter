@@ -13,9 +13,16 @@ on:
         description: 'Version to release (e.g., v1.0.0)'
         required: true
         type: string
+  workflow_run:
+    workflows:
+      - Version Bump
+    types:
+      - completed
 
 jobs:
   build-and-release:
+    # Only proceed when triggered by workflow_run if the triggering workflow concluded successfully
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: windows-latest
     
     steps:
@@ -74,7 +81,22 @@ jobs:
       env:
         VERSION_INPUT: ${{ github.event.inputs.version }}
       run: |
-        $version = if ($env:GITHUB_REF -match 'refs/tags/(.+)') { $matches[1] } else { $env:VERSION_INPUT }
+        $version = if ($env:GITHUB_REF -match 'refs/tags/(.+)') {
+          $matches[1]
+        } elseif ($env:VERSION_INPUT) {
+          $env:VERSION_INPUT
+        } else {
+          # Fallback: derive from pubspec.yaml when triggered via workflow_run without tag/input
+          $pubspec = Get-Content -Raw -Path "pubspec.yaml"
+          $versionLine = ($pubspec -split "`n") | Where-Object { $_.TrimStart().StartsWith('version: ') } | Select-Object -First 1
+          if (-not $versionLine) { throw "Couldn't find version in pubspec.yaml" }
+          $ver = $versionLine.Split(':')[1].Trim()
+          if ($ver -match '^(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?$') {
+            "v$($Matches[1]).$($Matches[2]).$($Matches[3])"
+          } else {
+            throw "Invalid pubspec version format: $ver"
+          }
+        }
         $archiveName = "api-utility-flutter-$version-windows.zip"
         
         # Create archive with the built app
