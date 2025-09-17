@@ -305,8 +305,9 @@ For support or questions, please refer to the application documentation.
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024)
+    if (bytes < 1024 * 1024 * 1024) {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
@@ -315,6 +316,7 @@ For support or questions, please refer to the application documentation.
     try {
       // This would need platform-specific implementation
       // For now, we'll just return the path
+      // ignore: avoid_print
       print('App directory: ${appDirectory.path}');
     } catch (e) {
       throw Exception('Failed to open app directory: $e');

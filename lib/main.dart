@@ -11,6 +11,7 @@ void main() async {
   try {
     await FolderStructureService.instance.initialize();
   } catch (e) {
+    // ignore: avoid_print
     print('Warning: Failed to initialize folder structure: $e');
   }
 

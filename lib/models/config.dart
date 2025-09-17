@@ -146,8 +146,9 @@ class ApiConfig {
     if (endpointPath.isEmpty) return false;
     if (authMethod == 'bearer' && token.isEmpty) return false;
     if (authMethod == 'api_key' && apiKey.isEmpty) return false;
-    if (authMethod == 'basic' && (username.isEmpty || password.isEmpty))
+    if (authMethod == 'basic' && (username.isEmpty || password.isEmpty)) {
       return false;
+    }
     return true;
   }
 }

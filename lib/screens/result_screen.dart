@@ -53,13 +53,15 @@ class _ResultScreenState extends State<ResultScreen>
 
         // Search in error messages
         if (result.pesanErrorSistem != null) {
-          if (result.pesanErrorSistem!.toLowerCase().contains(searchLower))
+          if (result.pesanErrorSistem!.toLowerCase().contains(searchLower)) {
             return true;
+          }
         }
 
         if (result.pesanErrorAPI != null) {
-          if (result.pesanErrorAPI!.toLowerCase().contains(searchLower))
+          if (result.pesanErrorAPI!.toLowerCase().contains(searchLower)) {
             return true;
+          }
         }
 
         // Search in failed data
