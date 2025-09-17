@@ -6,16 +6,14 @@ import '../models/result.dart';
 class ResultScreen extends StatefulWidget {
   final List<ApiResult> results;
 
-  const ResultScreen({
-    super.key,
-    required this.results,
-  });
+  const ResultScreen({super.key, required this.results});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMixin {
+class _ResultScreenState extends State<ResultScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
   String _filterStatus = 'all';
@@ -37,35 +35,39 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
 
     // Filter by status
     if (_filterStatus != 'all') {
-      filtered = filtered.where((result) => result.status == _filterStatus).toList();
+      filtered = filtered
+          .where((result) => result.status == _filterStatus)
+          .toList();
     }
 
     // Filter by search query
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((result) {
         final searchLower = _searchQuery.toLowerCase();
-        
+
         // Search in response data
         if (result.response != null) {
           final responseStr = result.response.toString().toLowerCase();
           if (responseStr.contains(searchLower)) return true;
         }
-        
+
         // Search in error messages
         if (result.pesanErrorSistem != null) {
-          if (result.pesanErrorSistem!.toLowerCase().contains(searchLower)) return true;
+          if (result.pesanErrorSistem!.toLowerCase().contains(searchLower))
+            return true;
         }
-        
+
         if (result.pesanErrorAPI != null) {
-          if (result.pesanErrorAPI!.toLowerCase().contains(searchLower)) return true;
+          if (result.pesanErrorAPI!.toLowerCase().contains(searchLower))
+            return true;
         }
-        
+
         // Search in failed data
         if (result.dataGagal != null) {
           final dataStr = result.dataGagal.toString().toLowerCase();
           if (dataStr.contains(searchLower)) return true;
         }
-        
+
         return false;
       }).toList();
     }
@@ -93,10 +95,7 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
               text: 'Success ($successCount)',
               icon: const Icon(Icons.check_circle),
             ),
-            Tab(
-              text: 'Errors ($errorCount)',
-              icon: const Icon(Icons.error),
-            ),
+            Tab(text: 'Errors ($errorCount)', icon: const Icon(Icons.error)),
           ],
         ),
         actions: [
@@ -158,8 +157,12 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
               controller: _tabController,
               children: [
                 _buildResultsList(widget.results),
-                _buildResultsList(widget.results.where((r) => r.isSuccess).toList()),
-                _buildResultsList(widget.results.where((r) => r.isError).toList()),
+                _buildResultsList(
+                  widget.results.where((r) => r.isSuccess).toList(),
+                ),
+                _buildResultsList(
+                  widget.results.where((r) => r.isError).toList(),
+                ),
               ],
             ),
           ),
@@ -176,25 +179,21 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inbox,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.inbox, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
               'No results found',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: Colors.grey.shade600),
             ),
             if (_searchQuery.isNotEmpty || _filterStatus != 'all') ...[
               const SizedBox(height: 8),
               Text(
                 'Try adjusting your search or filter criteria',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
               ),
             ],
           ],
@@ -276,9 +275,9 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -296,10 +295,7 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
         scrollDirection: Axis.horizontal,
         child: Text(
           _formatJson(json),
-          style: const TextStyle(
-            fontFamily: 'monospace',
-            fontSize: 12,
-          ),
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
         ),
       ),
     );
@@ -314,10 +310,7 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 12),
-      ),
+      child: Text(text, style: const TextStyle(fontSize: 12)),
     );
   }
 
@@ -329,12 +322,12 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
   void _copyToClipboard(ApiResult result) {
     final json = result.toJson();
     final jsonString = _formatJson(json);
-    
+
     Clipboard.setData(ClipboardData(text: jsonString));
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Result copied to clipboard')),
-    );
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Result copied to clipboard')));
   }
 
   void _showSearchDialog() {

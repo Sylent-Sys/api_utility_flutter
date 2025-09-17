@@ -41,10 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -62,14 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.play_arrow),
             label: 'Processing',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder),
-            label: 'Folders',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Folders'),
         ],
       ),
     );
@@ -86,10 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'A powerful Flutter tool for processing CSV/Excel data through API calls.',
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Features:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        const Text('Features:', style: TextStyle(fontWeight: FontWeight.bold)),
         const Text('• CSV/Excel file processing'),
         const Text('• Multiple authentication methods'),
         const Text('• Rate limiting and retry mechanisms'),

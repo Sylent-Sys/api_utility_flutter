@@ -50,10 +50,7 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
         title: const Text('Folder Management'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadStats,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
         ],
       ),
       body: _isLoading
@@ -64,9 +61,7 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
 
   Widget _buildContent() {
     if (_stats == null) {
-      return const Center(
-        child: Text('Failed to load folder information'),
-      );
+      return const Center(child: Text('Failed to load folder information'));
     }
 
     return SingleChildScrollView(
@@ -99,9 +94,9 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Application Directory',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -153,20 +148,32 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Storage Statistics',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildStatRow('Configuration Files', _stats!['configFiles'].toString()),
+            _buildStatRow(
+              'Configuration Files',
+              _stats!['configFiles'].toString(),
+            ),
             _buildStatRow('Output Files', _stats!['outputFiles'].toString()),
             _buildStatRow('Total Size', _formatBytes(_stats!['totalSize'])),
             const Divider(),
-            _buildStatRow('Config Size', _formatBytes(_stats!['totalConfigSize'])),
-            _buildStatRow('Output Size', _formatBytes(_stats!['totalOutputSize'])),
-            _buildStatRow('History Size', _formatBytes(_stats!['totalHistorySize'])),
+            _buildStatRow(
+              'Config Size',
+              _formatBytes(_stats!['totalConfigSize']),
+            ),
+            _buildStatRow(
+              'Output Size',
+              _formatBytes(_stats!['totalOutputSize']),
+            ),
+            _buildStatRow(
+              'History Size',
+              _formatBytes(_stats!['totalHistorySize']),
+            ),
             _buildStatRow('Temp Size', _formatBytes(_stats!['totalTempSize'])),
           ],
         ),
@@ -187,15 +194,18 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Folder Structure',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             _buildFolderItem('📁 config/', 'API configurations and settings'),
-            _buildFolderItem('📁 output/', 'Processing results organized by date'),
+            _buildFolderItem(
+              '📁 output/',
+              'Processing results organized by date',
+            ),
             _buildFolderItem('📁 history/', 'Complete processing history'),
             _buildFolderItem('📁 temp/', 'Temporary files (auto-cleaned)'),
             _buildFolderItem('📄 README.txt', 'Folder structure documentation'),
@@ -218,9 +228,9 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Folder Actions',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -266,10 +276,7 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -282,9 +289,7 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
         children: [
           Text(icon, style: const TextStyle(fontSize: 16)),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(description),
-          ),
+          Expanded(child: Text(description)),
         ],
       ),
     );
@@ -292,9 +297,9 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Path copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Path copied to clipboard')));
   }
 
   Future<void> _cleanTempFiles() async {
@@ -348,7 +353,9 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
         await _loadStats();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Files older than $days days cleaned successfully')),
+            SnackBar(
+              content: Text('Files older than $days days cleaned successfully'),
+            ),
           );
         }
       } catch (e) {
@@ -391,7 +398,8 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }

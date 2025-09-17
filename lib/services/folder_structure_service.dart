@@ -3,8 +3,9 @@ import 'package:path_provider/path_provider.dart';
 
 class FolderStructureService {
   static FolderStructureService? _instance;
-  static FolderStructureService get instance => _instance ??= FolderStructureService._();
-  
+  static FolderStructureService get instance =>
+      _instance ??= FolderStructureService._();
+
   FolderStructureService._();
 
   Directory? _appDirectory;
@@ -18,7 +19,7 @@ class FolderStructureService {
     try {
       // Get application documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
-      
+
       // Create main app directory
       _appDirectory = Directory('${documentsDir.path}/API_Utility_Flutter');
       await _appDirectory!.create(recursive: true);
@@ -37,7 +38,6 @@ class FolderStructureService {
 
       // Create README file in main directory
       await _createReadmeFile();
-      
     } catch (e) {
       throw Exception('Failed to initialize folder structure: $e');
     }
@@ -46,7 +46,9 @@ class FolderStructureService {
   /// Get the main application directory
   Directory get appDirectory {
     if (_appDirectory == null) {
-      throw Exception('FolderStructureService not initialized. Call initialize() first.');
+      throw Exception(
+        'FolderStructureService not initialized. Call initialize() first.',
+      );
     }
     return _appDirectory!;
   }
@@ -54,7 +56,9 @@ class FolderStructureService {
   /// Get the configuration directory
   Directory get configDirectory {
     if (_configDirectory == null) {
-      throw Exception('FolderStructureService not initialized. Call initialize() first.');
+      throw Exception(
+        'FolderStructureService not initialized. Call initialize() first.',
+      );
     }
     return _configDirectory!;
   }
@@ -62,7 +66,9 @@ class FolderStructureService {
   /// Get the output directory
   Directory get outputDirectory {
     if (_outputDirectory == null) {
-      throw Exception('FolderStructureService not initialized. Call initialize() first.');
+      throw Exception(
+        'FolderStructureService not initialized. Call initialize() first.',
+      );
     }
     return _outputDirectory!;
   }
@@ -70,7 +76,9 @@ class FolderStructureService {
   /// Get the history directory
   Directory get historyDirectory {
     if (_historyDirectory == null) {
-      throw Exception('FolderStructureService not initialized. Call initialize() first.');
+      throw Exception(
+        'FolderStructureService not initialized. Call initialize() first.',
+      );
     }
     return _historyDirectory!;
   }
@@ -78,7 +86,9 @@ class FolderStructureService {
   /// Get the temp directory
   Directory get tempDirectory {
     if (_tempDirectory == null) {
-      throw Exception('FolderStructureService not initialized. Call initialize() first.');
+      throw Exception(
+        'FolderStructureService not initialized. Call initialize() first.',
+      );
     }
     return _tempDirectory!;
   }
@@ -87,13 +97,19 @@ class FolderStructureService {
   String get configFilePath => '${configDirectory.path}/api_config.json';
 
   /// Get history file path
-  String get historyFilePath => '${historyDirectory.path}/processing_history.json';
+  String get historyFilePath =>
+      '${historyDirectory.path}/processing_history.json';
 
   /// Get output file path with timestamp
   String getOutputFilePath(String pattern) {
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+    final timestamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .split('.')[0];
     final filename = pattern.replaceAll('{date}', timestamp);
-    final finalFilename = filename.endsWith('.json') ? filename : '$filename.json';
+    final finalFilename = filename.endsWith('.json')
+        ? filename
+        : '$filename.json';
     return '${outputDirectory.path}/$finalFilename';
   }
 
@@ -103,15 +119,17 @@ class FolderStructureService {
     final year = now.year.toString();
     final month = now.month.toString().padLeft(2, '0');
     final day = now.day.toString().padLeft(2, '0');
-    
+
     // Create date-based subdirectory
     final dateDir = Directory('${outputDirectory.path}/$year/$month/$day');
     dateDir.createSync(recursive: true);
-    
+
     final timestamp = now.toIso8601String().replaceAll(':', '-').split('.')[0];
     final filename = pattern.replaceAll('{date}', timestamp);
-    final finalFilename = filename.endsWith('.json') ? filename : '$filename.json';
-    
+    final finalFilename = filename.endsWith('.json')
+        ? filename
+        : '$filename.json';
+
     return '${dateDir.path}/$finalFilename';
   }
 
@@ -120,7 +138,7 @@ class FolderStructureService {
     try {
       final configDir = configDirectory;
       if (!await configDir.exists()) return [];
-      
+
       final files = await configDir.list().toList();
       return files
           .whereType<File>()
@@ -136,16 +154,18 @@ class FolderStructureService {
     try {
       final outputDir = outputDirectory;
       if (!await outputDir.exists()) return [];
-      
+
       final files = <File>[];
       await for (final entity in outputDir.list(recursive: true)) {
         if (entity is File && entity.path.endsWith('.json')) {
           files.add(entity);
         }
       }
-      
+
       // Sort by modification time (newest first)
-      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      files.sort(
+        (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+      );
       return files;
     } catch (e) {
       return [];
@@ -178,12 +198,12 @@ class FolderStructureService {
     try {
       final configFiles = await getConfigFiles();
       final outputFiles = await getOutputFiles();
-      
+
       final totalConfigSize = await getFolderSize(configDirectory);
       final totalOutputSize = await getFolderSize(outputDirectory);
       final totalHistorySize = await getFolderSize(historyDirectory);
       final totalTempSize = await getFolderSize(tempDirectory);
-      
+
       return {
         'configFiles': configFiles.length,
         'outputFiles': outputFiles.length,
@@ -191,7 +211,11 @@ class FolderStructureService {
         'totalOutputSize': totalOutputSize,
         'totalHistorySize': totalHistorySize,
         'totalTempSize': totalTempSize,
-        'totalSize': totalConfigSize + totalOutputSize + totalHistorySize + totalTempSize,
+        'totalSize':
+            totalConfigSize +
+            totalOutputSize +
+            totalHistorySize +
+            totalTempSize,
         'appDirectory': appDirectory.path,
       };
     } catch (e) {
@@ -229,7 +253,7 @@ class FolderStructureService {
     try {
       final cutoffDate = DateTime.now().subtract(Duration(days: daysOld));
       final outputFiles = await getOutputFiles();
-      
+
       for (final file in outputFiles) {
         final lastModified = await file.lastModified();
         if (lastModified.isBefore(cutoffDate)) {
@@ -281,7 +305,8 @@ For support or questions, please refer to the application documentation.
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 

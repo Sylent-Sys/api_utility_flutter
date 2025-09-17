@@ -14,10 +14,7 @@ class ApiResult {
   });
 
   factory ApiResult.success(Map<String, dynamic> response) {
-    return ApiResult(
-      status: 'success',
-      response: response,
-    );
+    return ApiResult(status: 'success', response: response);
   }
 
   factory ApiResult.error({

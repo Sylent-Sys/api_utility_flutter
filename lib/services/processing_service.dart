@@ -10,17 +10,17 @@ import 'history_service.dart';
 class ProcessingService {
   static ProcessingService? _instance;
   static ProcessingService get instance => _instance ??= ProcessingService._();
-  
+
   ProcessingService._();
 
   final ApiService _apiService = ApiService.instance;
   final FileService _fileService = FileService.instance;
   final HistoryService _historyService = HistoryService.instance;
   final Uuid _uuid = const Uuid();
-  
+
   StreamController<ProcessingProgress>? _progressController;
   StreamController<List<ApiResult>>? _resultsController;
-  
+
   bool _isProcessing = false;
   bool _isCancelled = false;
 
@@ -47,15 +47,18 @@ class ProcessingService {
 
     _isProcessing = true;
     _isCancelled = false;
-    
+
     try {
       _progressController ??= StreamController<ProcessingProgress>.broadcast();
       _resultsController ??= StreamController<List<ApiResult>>.broadcast();
 
       // Read input data
       _updateProgress(0, 'Reading input file...', 0, 0);
-      final data = await _fileService.readDataFile(inputFilePath, testRows: testRows);
-      
+      final data = await _fileService.readDataFile(
+        inputFilePath,
+        testRows: testRows,
+      );
+
       if (data.isEmpty) {
         throw Exception('No data found in input file');
       }
@@ -66,7 +69,12 @@ class ProcessingService {
       int successCount = 0;
       int errorCount = 0;
 
-      _updateProgress(10, 'Starting API processing...', processedRows, totalRows);
+      _updateProgress(
+        10,
+        'Starting API processing...',
+        processedRows,
+        totalRows,
+      );
 
       // Process data in batches
       final batchSize = config.batchSize > 0 ? config.batchSize : 10;
@@ -125,7 +133,7 @@ class ProcessingService {
         isTestMode: testRows != null,
         testRows: testRows,
       );
-      
+
       await _historyService.addToHistory(history);
 
       _updateProgress(100, 'Processing completed!', processedRows, totalRows);
@@ -138,7 +146,6 @@ class ProcessingService {
         results: results,
         outputPath: outputPath,
       );
-
     } catch (e) {
       _updateProgress(0, 'Error: $e', 0, 0);
       return ProcessingResult(
@@ -159,12 +166,12 @@ class ProcessingService {
     int batchSize,
   ) {
     final batches = <List<Map<String, dynamic>>>[];
-    
+
     for (int i = 0; i < data.length; i += batchSize) {
       final end = (i + batchSize < data.length) ? i + batchSize : data.length;
       batches.add(data.sublist(i, end));
     }
-    
+
     return batches;
   }
 
@@ -176,7 +183,12 @@ class ProcessingService {
     return await Future.wait(futures);
   }
 
-  void _updateProgress(double percentage, String message, int processed, int total) {
+  void _updateProgress(
+    double percentage,
+    String message,
+    int processed,
+    int total,
+  ) {
     final progress = ProcessingProgress(
       percentage: percentage,
       message: message,

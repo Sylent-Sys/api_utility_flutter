@@ -39,9 +39,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load history: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load history: $e')));
       }
     }
   }
@@ -54,8 +54,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final queryLower = _searchQuery.toLowerCase();
       filtered = filtered.where((h) {
         return h.inputFileName.toLowerCase().contains(queryLower) ||
-               h.configName.toLowerCase().contains(queryLower) ||
-               h.outputPath.toLowerCase().contains(queryLower);
+            h.configName.toLowerCase().contains(queryLower) ||
+            h.outputPath.toLowerCase().contains(queryLower);
       }).toList();
     }
 
@@ -89,10 +89,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             icon: const Icon(Icons.search),
             onPressed: _showSearchDialog,
           ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: _showSortDialog,
-          ),
+          IconButton(icon: const Icon(Icons.sort), onPressed: _showSortDialog),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'clear') {
@@ -126,9 +123,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_history.isEmpty) {
@@ -136,24 +131,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.history,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.history, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
               'No Processing History',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 8),
             Text(
               'Your processing results will appear here',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -221,11 +212,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       margin: const EdgeInsets.all(8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: history.successRate > 0.8 
-              ? Colors.green 
-              : history.successRate > 0.5 
-                  ? Colors.orange 
-                  : Colors.red,
+          backgroundColor: history.successRate > 0.8
+              ? Colors.green
+              : history.successRate > 0.5
+              ? Colors.orange
+              : Colors.red,
           child: Icon(
             history.isTestMode ? Icons.science : Icons.api,
             color: Colors.white,
@@ -239,7 +230,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Config: ${history.configName}'),
-            Text('${history.totalRows} rows • ${history.successCount} success • ${history.errorCount} errors'),
+            Text(
+              '${history.totalRows} rows • ${history.successCount} success • ${history.errorCount} errors',
+            ),
             Text('${history.formattedTimestamp} • ${history.duration}'),
             if (history.isTestMode)
               Chip(
@@ -271,11 +264,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _getSortLabel(String sortBy) {
     switch (sortBy) {
-      case 'newest': return 'Newest First';
-      case 'oldest': return 'Oldest First';
-      case 'success_rate': return 'Success Rate';
-      case 'error_rate': return 'Error Rate';
-      default: return 'Newest First';
+      case 'newest':
+        return 'Newest First';
+      case 'oldest':
+        return 'Oldest First';
+      case 'success_rate':
+        return 'Success Rate';
+      case 'error_rate':
+        return 'Error Rate';
+      default:
+        return 'Newest First';
     }
   }
 
@@ -292,7 +290,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete History'),
-        content: Text('Are you sure you want to delete this processing history?'),
+        content: Text(
+          'Are you sure you want to delete this processing history?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -365,7 +365,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
           items: const [
             DropdownMenuItem(value: 'newest', child: Text('Newest First')),
             DropdownMenuItem(value: 'oldest', child: Text('Oldest First')),
-            DropdownMenuItem(value: 'success_rate', child: Text('Success Rate')),
+            DropdownMenuItem(
+              value: 'success_rate',
+              child: Text('Success Rate'),
+            ),
             DropdownMenuItem(value: 'error_rate', child: Text('Error Rate')),
           ],
           onChanged: (value) {
@@ -390,7 +393,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear All History'),
-        content: const Text('Are you sure you want to delete all processing history? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete all processing history? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -426,7 +431,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _showStatsDialog() async {
     try {
       final stats = await _historyService.getHistoryStats();
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -436,11 +441,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStatRow('Total Processings', stats['totalProcessings']!.toString()),
-                _buildStatRow('Total Rows Processed', stats['totalRows']!.toString()),
-                _buildStatRow('Total Successful', stats['totalSuccess']!.toString()),
+                _buildStatRow(
+                  'Total Processings',
+                  stats['totalProcessings']!.toString(),
+                ),
+                _buildStatRow(
+                  'Total Rows Processed',
+                  stats['totalRows']!.toString(),
+                ),
+                _buildStatRow(
+                  'Total Successful',
+                  stats['totalSuccess']!.toString(),
+                ),
                 _buildStatRow('Total Errors', stats['totalErrors']!.toString()),
-                _buildStatRow('Test Mode Runs', stats['testModeCount']!.toString()),
+                _buildStatRow(
+                  'Test Mode Runs',
+                  stats['testModeCount']!.toString(),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Success Rate: ${((stats['totalSuccess']! / (stats['totalSuccess']! + stats['totalErrors']!)) * 100).toStringAsFixed(1)}%',
@@ -473,10 +490,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );

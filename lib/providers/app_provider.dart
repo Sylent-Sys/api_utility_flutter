@@ -23,7 +23,8 @@ class AppProvider extends ChangeNotifier {
   bool get isProcessing => _processingService.isProcessing;
 
   // Streams
-  Stream<ProcessingProgress> get progressStream => _processingService.progressStream;
+  Stream<ProcessingProgress> get progressStream =>
+      _processingService.progressStream;
   Stream<List<ApiResult>> get resultsStream => _processingService.resultsStream;
 
   AppProvider() {

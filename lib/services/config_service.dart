@@ -6,7 +6,7 @@ import 'folder_structure_service.dart';
 class ConfigService {
   static ConfigService? _instance;
   static ConfigService get instance => _instance ??= ConfigService._();
-  
+
   ConfigService._();
 
   final FolderStructureService _folderService = FolderStructureService.instance;
@@ -14,10 +14,10 @@ class ConfigService {
 
   Future<ApiConfig> getConfig() async {
     if (_cachedConfig != null) return _cachedConfig!;
-    
+
     try {
       final configFile = File(_folderService.configFilePath);
-      
+
       if (await configFile.exists()) {
         final configJson = await configFile.readAsString();
         final configMap = json.decode(configJson) as Map<String, dynamic>;
@@ -27,7 +27,7 @@ class ConfigService {
     } catch (e) {
       // If parsing fails, return default config
     }
-    
+
     _cachedConfig = const ApiConfig();
     return _cachedConfig!;
   }

@@ -8,7 +8,7 @@ import '../models/result.dart';
 class ApiService {
   static ApiService? _instance;
   static ApiService get instance => _instance ??= ApiService._();
-  
+
   ApiService._();
 
   Dio? _dio;
@@ -16,27 +16,31 @@ class ApiService {
 
   void _setupDio(ApiConfig config) {
     _dio?.close();
-    
-    _dio = Dio(BaseOptions(
-      baseUrl: config.baseUrl,
-      connectTimeout: Duration(seconds: config.timeoutSec),
-      receiveTimeout: Duration(seconds: config.timeoutSec),
-      sendTimeout: Duration(seconds: config.timeoutSec),
-      headers: _buildHeaders(config),
-    ));
+
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: config.baseUrl,
+        connectTimeout: Duration(seconds: config.timeoutSec),
+        receiveTimeout: Duration(seconds: config.timeoutSec),
+        sendTimeout: Duration(seconds: config.timeoutSec),
+        headers: _buildHeaders(config),
+      ),
+    );
 
     // Add interceptors for retry logic
-    _dio!.interceptors.add(RetryInterceptor(
-      dio: _dio!,
-      logPrint: print,
-      retries: config.maxRetries,
-      retryDelays: _generateRetryDelays(config.maxRetries),
-    ));
+    _dio!.interceptors.add(
+      RetryInterceptor(
+        dio: _dio!,
+        logPrint: print,
+        retries: config.maxRetries,
+        retryDelays: _generateRetryDelays(config.maxRetries),
+      ),
+    );
   }
 
   Map<String, String> _buildHeaders(ApiConfig config) {
     final headers = <String, String>{};
-    
+
     // Add authentication headers
     switch (config.authMethod.toLowerCase()) {
       case 'bearer':
@@ -60,16 +64,16 @@ class ApiService {
         // No authentication
         break;
     }
-    
+
     // Add custom headers
     headers.addAll(config.customHeaders);
-    
+
     // Ensure Content-Type for POST requests
-    if (config.requestMethod.toUpperCase() == 'POST' && 
+    if (config.requestMethod.toUpperCase() == 'POST' &&
         !headers.containsKey('Content-Type')) {
       headers['Content-Type'] = 'application/json';
     }
-    
+
     return headers;
   }
 
@@ -85,39 +89,44 @@ class ApiService {
 
   Future<void> _applyRateLimit(double rateLimitSecond) async {
     if (rateLimitSecond > 0) {
-      await Future.delayed(Duration(milliseconds: (rateLimitSecond * 1000).round()));
+      await Future.delayed(
+        Duration(milliseconds: (rateLimitSecond * 1000).round()),
+      );
     }
   }
 
-  Map<String, dynamic> _stringifyFields(Map<String, dynamic> data, List<String> stringKeys) {
+  Map<String, dynamic> _stringifyFields(
+    Map<String, dynamic> data,
+    List<String> stringKeys,
+  ) {
     final result = Map<String, dynamic>.from(data);
-    
+
     for (final key in stringKeys) {
       if (result.containsKey(key)) {
         result[key] = result[key].toString();
       }
     }
-    
+
     return result;
   }
 
-  Future<ApiResult> callApi(ApiConfig config, Map<String, dynamic> rowData) async {
+  Future<ApiResult> callApi(
+    ApiConfig config,
+    Map<String, dynamic> rowData,
+  ) async {
     try {
       _setupDio(config);
-      
+
       // Apply rate limiting
       await _applyRateLimit(config.rateLimitSecond);
-      
+
       // Stringify specified fields
       final processedData = _stringifyFields(rowData, config.stringKeys);
-      
+
       Response response;
-      
+
       if (config.requestMethod.toUpperCase() == 'POST') {
-        response = await _dio!.post(
-          config.endpointPath,
-          data: processedData,
-        );
+        response = await _dio!.post(config.endpointPath, data: processedData);
       } else {
         // GET request with query parameters
         response = await _dio!.get(
@@ -125,43 +134,45 @@ class ApiService {
           queryParameters: processedData,
         );
       }
-      
-      if (response.statusCode != null && 
-          response.statusCode! >= 200 && 
+
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
           response.statusCode! < 300) {
-        
         Map<String, dynamic> responseData;
         if (response.data is Map<String, dynamic>) {
           responseData = response.data as Map<String, dynamic>;
         } else if (response.data is String) {
           try {
-            responseData = json.decode(response.data as String) as Map<String, dynamic>;
+            responseData =
+                json.decode(response.data as String) as Map<String, dynamic>;
           } catch (e) {
             responseData = {'raw': response.data as String};
           }
         } else {
           responseData = {'raw': response.data.toString()};
         }
-        
+
         return ApiResult.success(responseData);
       } else {
         return ApiResult.error(
           dataGagal: processedData,
-          pesanErrorSistem: 'HTTP ${response.statusCode}: ${response.statusMessage}',
+          pesanErrorSistem:
+              'HTTP ${response.statusCode}: ${response.statusMessage}',
           pesanErrorAPI: response.data?.toString(),
         );
       }
     } on DioException catch (e) {
       String errorMessage;
       String? apiErrorBody;
-      
+
       if (e.response != null) {
-        errorMessage = 'HTTP ${e.response!.statusCode}: ${e.response!.statusMessage}';
+        errorMessage =
+            'HTTP ${e.response!.statusCode}: ${e.response!.statusMessage}';
         apiErrorBody = e.response!.data?.toString();
       } else {
         errorMessage = e.message ?? 'Network error';
       }
-      
+
       return ApiResult.error(
         dataGagal: _stringifyFields(rowData, config.stringKeys),
         pesanErrorSistem: errorMessage,
@@ -198,16 +209,16 @@ class RetryInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (_shouldRetry(err)) {
       final attempt = err.requestOptions.extra['retry_attempt'] ?? 0;
-      
+
       if (attempt < retries) {
         err.requestOptions.extra['retry_attempt'] = attempt + 1;
-        
+
         logPrint?.call('Retrying request (attempt ${attempt + 1}/$retries)');
-        
+
         if (attempt < retryDelays.length) {
           await Future.delayed(retryDelays[attempt]);
         }
-        
+
         try {
           final response = await dio.fetch(err.requestOptions);
           handler.resolve(response);
@@ -216,15 +227,12 @@ class RetryInterceptor extends Interceptor {
           if (e is DioException) {
             err = e;
           } else {
-            err = DioException(
-              requestOptions: err.requestOptions,
-              error: e,
-            );
+            err = DioException(requestOptions: err.requestOptions, error: e);
           }
         }
       }
     }
-    
+
     handler.next(err);
   }
 
@@ -236,12 +244,12 @@ class RetryInterceptor extends Interceptor {
         err.type == DioExceptionType.connectionError) {
       return true;
     }
-    
+
     if (err.response?.statusCode != null) {
       final statusCode = err.response!.statusCode!;
       return statusCode == 429 || (statusCode >= 500 && statusCode < 600);
     }
-    
+
     return false;
   }
 }

@@ -119,7 +119,8 @@ class ApiConfig {
       username: json['username'] ?? '',
       password: json['password'] ?? '',
       baseUrl: json['baseUrl'] ?? 'http://localhost:7071/api',
-      endpointPath: json['endpointPath'] ?? '/FYP/Bengkel/AttendanceMonitoring/Create',
+      endpointPath:
+          json['endpointPath'] ?? '/FYP/Bengkel/AttendanceMonitoring/Create',
       inputFile: json['inputFile'] ?? 'test.csv',
       outputDir: json['outputDir'] ?? 'output',
       stringKeys: List<String>.from(json['stringKeys'] ?? ['id']),
@@ -130,11 +131,13 @@ class ApiConfig {
       maxRetries: json['maxRetries'] ?? 3,
       requestMethod: json['requestMethod'] ?? 'GET',
       authMethod: json['authMethod'] ?? 'bearer',
-      customHeaders: Map<String, String>.from(json['customHeaders'] ?? {'Content-Type': 'application/json'}),
+      customHeaders: Map<String, String>.from(
+        json['customHeaders'] ?? {'Content-Type': 'application/json'},
+      ),
     );
   }
 
-  String get fullUrl => baseUrl.endsWith('/') 
+  String get fullUrl => baseUrl.endsWith('/')
       ? '$baseUrl${endpointPath.startsWith('/') ? endpointPath.substring(1) : endpointPath}'
       : '$baseUrl$endpointPath';
 
@@ -143,7 +146,8 @@ class ApiConfig {
     if (endpointPath.isEmpty) return false;
     if (authMethod == 'bearer' && token.isEmpty) return false;
     if (authMethod == 'api_key' && apiKey.isEmpty) return false;
-    if (authMethod == 'basic' && (username.isEmpty || password.isEmpty)) return false;
+    if (authMethod == 'basic' && (username.isEmpty || password.isEmpty))
+      return false;
     return true;
   }
 }

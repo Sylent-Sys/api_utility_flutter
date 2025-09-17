@@ -50,9 +50,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           children: [
             Text(
               'Input File',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             if (provider.selectedFilePath != null) ...[
@@ -72,7 +72,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _fileService.getFileName(provider.selectedFilePath!),
+                            _fileService.getFileName(
+                              provider.selectedFilePath!,
+                            ),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
@@ -101,9 +103,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                   children: [
                     Icon(Icons.file_upload, color: Colors.grey.shade600),
                     const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('No file selected'),
-                    ),
+                    const Expanded(child: Text('No file selected')),
                   ],
                 ),
               ),
@@ -129,9 +129,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           children: [
             Text(
               'Test Mode',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -167,9 +167,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   }
 
   Widget _buildActionButtons(AppProvider provider) {
-    final canProcess = provider.selectedFilePath != null && 
-                      !provider.isProcessing && 
-                      provider.config.isValid;
+    final canProcess =
+        provider.selectedFilePath != null &&
+        !provider.isProcessing &&
+        provider.config.isValid;
 
     return Row(
       children: [
@@ -183,7 +184,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.play_arrow),
-            label: Text(provider.isProcessing ? 'Processing...' : 'Start Processing'),
+            label: Text(
+              provider.isProcessing ? 'Processing...' : 'Start Processing',
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
@@ -217,9 +220,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           children: [
             Text(
               'Processing Progress',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             StreamBuilder(
@@ -227,10 +230,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(
-                    child: SpinKitWave(
-                      color: Colors.blue,
-                      size: 30.0,
-                    ),
+                    child: SpinKitWave(color: Colors.blue, size: 30.0),
                   );
                 }
 
@@ -299,7 +299,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
 
   Widget _buildResultSummary(AppProvider provider) {
     final result = provider.lastResult!;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -310,29 +310,45 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
               children: [
                 Icon(
                   result.success ? Icons.check_circle : Icons.error,
-                  color: result.success ? Colors.green.shade700 : Colors.red.shade700,
+                  color: result.success
+                      ? Colors.green.shade700
+                      : Colors.red.shade700,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Processing ${result.success ? 'Completed' : 'Failed'}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: result.success ? Colors.green.shade700 : Colors.red.shade700,
+                    color: result.success
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             if (result.success) ...[
-              _buildStatCard('Total Rows', result.totalRows.toString(), Icons.list),
-              const SizedBox(height: 8),
-              _buildStatCard('Successful', result.successCount.toString(), Icons.check),
-              const SizedBox(height: 8),
-              _buildStatCard('Failed', result.errorCount.toString(), Icons.error),
+              _buildStatCard(
+                'Total Rows',
+                result.totalRows.toString(),
+                Icons.list,
+              ),
               const SizedBox(height: 8),
               _buildStatCard(
-                'Success Rate', 
-                '${(result.successRate * 100).toStringAsFixed(1)}%', 
+                'Successful',
+                result.successCount.toString(),
+                Icons.check,
+              ),
+              const SizedBox(height: 8),
+              _buildStatCard(
+                'Failed',
+                result.errorCount.toString(),
+                Icons.error,
+              ),
+              const SizedBox(height: 8),
+              _buildStatCard(
+                'Success Rate',
+                '${(result.successRate * 100).toStringAsFixed(1)}%',
                 Icons.trending_up,
               ),
               if (result.outputPath != null) ...[
@@ -409,10 +425,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           const SizedBox(width: 8),
           Text(label),
           const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -426,9 +439,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to select file: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to select file: $e')));
       }
     }
   }
@@ -438,9 +451,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       await provider.processData(testRows: _testRows);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Processing failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Processing failed: $e')));
       }
     }
   }
@@ -448,7 +461,8 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   void _viewResults(AppProvider provider) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ResultScreen(results: provider.lastResult!.results),
+        builder: (context) =>
+            ResultScreen(results: provider.lastResult!.results),
       ),
     );
   }
@@ -473,7 +487,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                   style: const TextStyle(fontFamily: 'monospace'),
                 ),
                 const SizedBox(height: 16),
-                const Text('You can find this file in your device\'s documents folder.'),
+                const Text(
+                  'You can find this file in your device\'s documents folder.',
+                ),
               ],
             ),
             actions: [
@@ -485,14 +501,14 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No results to export')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No results to export')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 }

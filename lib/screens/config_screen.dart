@@ -35,19 +35,29 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   void _initializeControllers() {
     final config = context.read<AppProvider>().config;
-    
+
     _baseUrlController = TextEditingController(text: config.baseUrl);
     _endpointPathController = TextEditingController(text: config.endpointPath);
     _tokenController = TextEditingController(text: config.token);
     _apiKeyController = TextEditingController(text: config.apiKey);
     _usernameController = TextEditingController(text: config.username);
     _passwordController = TextEditingController(text: config.password);
-    _timeoutController = TextEditingController(text: config.timeoutSec.toString());
-    _batchSizeController = TextEditingController(text: config.batchSize.toString());
-    _rateLimitController = TextEditingController(text: config.rateLimitSecond.toString());
-    _maxRetriesController = TextEditingController(text: config.maxRetries.toString());
-    _stringKeysController = TextEditingController(text: config.stringKeys.join(', '));
-    
+    _timeoutController = TextEditingController(
+      text: config.timeoutSec.toString(),
+    );
+    _batchSizeController = TextEditingController(
+      text: config.batchSize.toString(),
+    );
+    _rateLimitController = TextEditingController(
+      text: config.rateLimitSecond.toString(),
+    );
+    _maxRetriesController = TextEditingController(
+      text: config.maxRetries.toString(),
+    );
+    _stringKeysController = TextEditingController(
+      text: config.stringKeys.join(', '),
+    );
+
     _authMethod = config.authMethod;
     _requestMethod = config.requestMethod;
   }
@@ -102,9 +112,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -208,7 +218,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
             ),
             obscureText: true,
             validator: (value) {
-              if (_authMethod == 'api_key' && (value == null || value.isEmpty)) {
+              if (_authMethod == 'api_key' &&
+                  (value == null || value.isEmpty)) {
                 return 'API Key is required for API Key authentication';
               }
               return null;
