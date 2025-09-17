@@ -64,7 +64,7 @@ jobs:
           throw "Invalid pubspec version format: $ver"
         }
         # Update msix_version in pubspec.yaml
-        $updated = [System.Text.RegularExpressions.Regex]::Replace($pubspec, '(?m)^(\s*msix_version:\s*)(.+)$', "`$1$msixVer")
+        $updated = [System.Text.RegularExpressions.Regex]::Replace($pubspec, '(?m)^(\s*msix_version:\s*)(.+)$', "`${1}$msixVer")
         Set-Content -Path "pubspec.yaml" -Value $updated -Encoding UTF8
         Write-Host "Set msix_version to $msixVer"
 
