@@ -56,14 +56,6 @@ jobs:
         channel: 'stable'
         cache: true
         
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.3
-      
-    - name: Setup Visual Studio
-      uses: microsoft/setup-vs@v1
-      with:
-        vs-version: '17.0'
-        components: 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
         
     - name: Get dependencies
       run: flutter pub get
