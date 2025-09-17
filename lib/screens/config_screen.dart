@@ -175,7 +175,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _requestMethod,
+          initialValue: _requestMethod,
           decoration: const InputDecoration(
             labelText: 'Request Method',
             border: OutlineInputBorder(),
@@ -198,7 +198,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
     return Column(
       children: [
         DropdownButtonFormField<String>(
-          value: _authMethod,
+          initialValue: _authMethod,
           decoration: const InputDecoration(
             labelText: 'Authentication Method',
             border: OutlineInputBorder(),
