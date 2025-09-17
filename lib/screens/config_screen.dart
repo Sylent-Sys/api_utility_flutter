@@ -26,6 +26,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   String _authMethod = 'bearer';
   String _requestMethod = 'GET';
+  bool _didInitialSync = false;
 
   @override
   void initState() {
@@ -82,6 +83,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
+        if (!_didInitialSync && !provider.isLoading) {
+          _syncFromProvider(provider.config);
+          _didInitialSync = true;
+        }
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -105,6 +110,23 @@ class _ConfigScreenState extends State<ConfigScreen> {
         );
       },
     );
+  }
+
+  void _syncFromProvider(ApiConfig config) {
+    _baseUrlController.text = config.baseUrl;
+    _endpointPathController.text = config.endpointPath;
+    _tokenController.text = config.token;
+    _apiKeyController.text = config.apiKey;
+    _usernameController.text = config.username;
+    _passwordController.text = config.password;
+    _timeoutController.text = config.timeoutSec.toString();
+    _batchSizeController.text = config.batchSize.toString();
+    _rateLimitController.text = config.rateLimitSecond.toString();
+    _maxRetriesController.text = config.maxRetries.toString();
+    _stringKeysController.text = config.stringKeys.join(', ');
+
+    _authMethod = config.authMethod;
+    _requestMethod = config.requestMethod;
   }
 
   Widget _buildSectionHeader(String title) {
@@ -153,7 +175,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          initialValue: _requestMethod,
+          value: _requestMethod,
           decoration: const InputDecoration(
             labelText: 'Request Method',
             border: OutlineInputBorder(),
@@ -176,7 +198,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
     return Column(
       children: [
         DropdownButtonFormField<String>(
-          initialValue: _authMethod,
+          value: _authMethod,
           decoration: const InputDecoration(
             labelText: 'Authentication Method',
             border: OutlineInputBorder(),

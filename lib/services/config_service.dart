@@ -17,15 +17,25 @@ class ConfigService {
 
     try {
       final configFile = File(_folderService.configFilePath);
+      // ignore: avoid_print
+      print('[ConfigService] Looking for config at: ${configFile.path}');
 
       if (await configFile.exists()) {
+        // ignore: avoid_print
+        print('[ConfigService] Config file found. Reading...');
         final configJson = await configFile.readAsString();
         final configMap = json.decode(configJson) as Map<String, dynamic>;
         _cachedConfig = ApiConfig.fromJson(configMap);
+        // ignore: avoid_print
+        print('[ConfigService] Config loaded successfully.');
         return _cachedConfig!;
       }
+      // ignore: avoid_print
+      print('[ConfigService] Config file not found. Using default config.');
     } catch (e) {
       // If parsing fails, return default config
+      // ignore: avoid_print
+      print('[ConfigService] Failed to parse config. Using default. Error: $e');
     }
 
     _cachedConfig = const ApiConfig();

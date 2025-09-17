@@ -36,6 +36,15 @@ class FolderStructureService {
       await _historyDirectory!.create(recursive: true);
       await _tempDirectory!.create(recursive: true);
 
+      // ignore: avoid_print
+      print('[FolderStructure] documentsDir: ${documentsDir.path}');
+      // ignore: avoid_print
+      print('[FolderStructure] appDirectory: ${_appDirectory!.path}');
+      // ignore: avoid_print
+      print('[FolderStructure] configDirectory: ${_configDirectory!.path}');
+      // ignore: avoid_print
+      print('[FolderStructure] configFilePath: $configFilePath');
+
       // Create README file in main directory
       await _createReadmeFile();
     } catch (e) {
