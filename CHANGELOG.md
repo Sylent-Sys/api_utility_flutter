@@ -1,3 +1,12 @@
+## [v1.1.1] - 2025-09-17
+
+### patch version bump
+- Version bumped from 1.1.0+2 to 1.1.1+3
+- Automated release build
+
+### Changes
+- See commit history for detailed changes
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
