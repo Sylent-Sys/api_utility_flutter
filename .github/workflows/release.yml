@@ -1,5 +1,8 @@
 name: Release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -40,8 +43,11 @@ jobs:
       run: flutter build windows --release
       
     - name: Create release archive
+      id: build_archive
+      env:
+        VERSION_INPUT: ${{ github.event.inputs.version }}
       run: |
-        $version = if ($env:GITHUB_REF -match 'refs/tags/(.+)') { $matches[1] } else { $env:INPUT_VERSION }
+        $version = if ($env:GITHUB_REF -match 'refs/tags/(.+)') { $matches[1] } else { $env:VERSION_INPUT }
         $archiveName = "api-utility-flutter-$version-windows.zip"
         
         # Create archive with the built app
@@ -55,7 +61,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: windows-release
-        path: ${{ steps.build.outputs.ARCHIVE_NAME }}
+        path: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
         
     - name: Create Release
       id: create_release
@@ -63,17 +69,17 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.build.outputs.VERSION || github.ref_name }}
-        release_name: API Utility Flutter ${{ steps.build.outputs.VERSION || github.ref_name }}
+        tag_name: ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
+        release_name: API Utility Flutter ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
         body: |
-          ## API Utility Flutter ${{ steps.build.outputs.VERSION || github.ref_name }}
+          ## API Utility Flutter ${{ steps.build_archive.outputs.VERSION || github.ref_name }}
           
           ### What's New
           - Automated release build
           - Windows desktop application
           
           ### Installation
-          1. Download the `api-utility-flutter-${{ steps.build.outputs.VERSION || github.ref_name }}-windows.zip` file
+          1. Download the `api-utility-flutter-${{ steps.build_archive.outputs.VERSION || github.ref_name }}-windows.zip` file
           2. Extract the archive to your desired location
           3. Run `api_utility_flutter.exe`
           
@@ -92,6 +98,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.build.outputs.ARCHIVE_NAME }}
-        asset_name: ${{ steps.build.outputs.ARCHIVE_NAME }}
+        asset_path: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
+        asset_name: ${{ steps.build_archive.outputs.ARCHIVE_NAME }}
         asset_content_type: application/zip
