@@ -1,0 +1,142 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Type of version bump'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+      create_tag:
+        description: 'Create and push tag'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        
+    - name: Get current version
+      id: current_version
+      run: |
+        # Extract current version from pubspec.yaml
+        CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+        echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+        
+    - name: Calculate new version
+      id: new_version
+      run: |
+        CURRENT_VERSION="${{ steps.current_version.outputs.CURRENT_VERSION }}"
+        VERSION_TYPE="${{ github.event.inputs.version_type }}"
+        
+        # Extract version number (remove build number)
+        VERSION_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f1)
+        BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
+        
+        # Split version into parts
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NUMBER"
+        
+        # Increment based on type
+        case $VERSION_TYPE in
+          major)
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            ;;
+          minor)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            ;;
+          patch)
+            PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        # Increment build number
+        BUILD_NUMBER=$((BUILD_NUMBER + 1))
+        
+        NEW_VERSION="$MAJOR.$MINOR.$PATCH+$BUILD_NUMBER"
+        NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+        
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "NEW_TAG=$NEW_TAG" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+        echo "New tag: $NEW_TAG"
+        
+    - name: Update pubspec.yaml
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.NEW_VERSION }}"
+        sed -i "s/^version: .*/version: $NEW_VERSION/" pubspec.yaml
+        echo "Updated pubspec.yaml to version: $NEW_VERSION"
+        
+    - name: Generate changelog entry
+      run: |
+        NEW_TAG="${{ steps.new_version.outputs.NEW_TAG }}"
+        VERSION_TYPE="${{ github.event.inputs.version_type }}"
+        
+        # Create changelog entry
+        cat > changelog_entry.tmp << EOF
+        ## [$NEW_TAG] - $(date +%Y-%m-%d)
+        
+        ### $VERSION_TYPE version bump
+        - Version bumped from ${{ steps.current_version.outputs.CURRENT_VERSION }} to ${{ steps.new_version.outputs.NEW_VERSION }}
+        - Automated release build
+        
+        ### Changes
+        - See commit history for detailed changes
+        
+        EOF
+        
+        # Create or update CHANGELOG.md
+        if [ -f CHANGELOG.md ]; then
+          # Prepend to existing changelog
+          cat changelog_entry.tmp CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+        else
+          # Create new changelog
+          echo -e "# Changelog\n\nAll notable changes to this project will be documented in this file.\n" > CHANGELOG.md
+          cat changelog_entry.tmp >> CHANGELOG.md
+        fi
+        
+        rm changelog_entry.tmp
+        echo "Updated CHANGELOG.md"
+        
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add pubspec.yaml CHANGELOG.md
+        git commit -m "chore: bump version to ${{ steps.new_version.outputs.NEW_VERSION }}"
+        
+    - name: Create and push tag
+      if: ${{ github.event.inputs.create_tag == 'true' }}
+      run: |
+        NEW_TAG="${{ steps.new_version.outputs.NEW_TAG }}"
+        git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
+        git push origin main
+        git push origin "$NEW_TAG"
+        echo "Created and pushed tag: $NEW_TAG"
+        
+    - name: Push changes
+      if: ${{ github.event.inputs.create_tag == 'false' }}
+      run: |
+        git push origin main
+        echo "Pushed version bump to main branch"
