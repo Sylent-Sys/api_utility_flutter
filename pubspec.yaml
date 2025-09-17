@@ -65,6 +65,22 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  msix: ^3.16.12
+
+msix_config:
+  display_name: API Utility Flutter
+  publisher_display_name: Sylent-Sys
+  identity_name: com.sylentsys.apiutilityflutter
+  msix_version: 1.0.0.0
+  logo_path: windows\runner\resources\app_icon.ico
+  start_menu: true
+  enable_at_startup: false
+  install_certificate: true
+  certificate_subject: CN=Sylent-Sys, O=Sylent-Sys, C=ID
+  # If you already have a code-signing certificate, set the following and remove install_certificate above
+  # certificate_path: C:\path\to\certificate.pfx
+  # certificate_password: your_password
+  # capabilities: ["internetClient"]
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
