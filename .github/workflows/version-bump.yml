@@ -145,21 +145,22 @@ jobs:
         
         # Check if changelog should be included in commit
         if [ "${{ github.event.inputs.update_changelog }}" = "true" ]; then
-          # Check if changelog was actually modified
-          if git diff --cached --quiet CHANGELOG.md; then
-            echo "CHANGELOG.md was not modified, committing only pubspec.yaml"
-            git commit -m "chore: bump version to ${{ steps.new_version.outputs.NEW_VERSION }}"
-          else
+          # Detect working tree changes to CHANGELOG.md (not just staged)
+          if [ -f CHANGELOG.md ] && ! git diff --quiet -- CHANGELOG.md; then
             echo "CHANGELOG.md was modified, committing both files"
             git add CHANGELOG.md
-            git commit -m "chore: bump version to ${{ steps.new_version.outputs.NEW_VERSION }}"
+          else
+            echo "CHANGELOG.md was not modified, committing only pubspec.yaml"
           fi
         else
           echo "Changelog update disabled, committing only pubspec.yaml"
-          git commit -m "chore: bump version to ${{ steps.new_version.outputs.NEW_VERSION }}"
         fi
-        
-        git pull --rebase origin main
+
+        # Commit whatever is staged (pubspec.yaml and maybe CHANGELOG.md)
+        git commit -m "chore: bump version to ${{ steps.new_version.outputs.NEW_VERSION }}"
+
+        # Rebase with autostash to avoid failure on any remaining local changes
+        git pull --rebase --autostash origin main
         
     - name: Create and push tag
       if: ${{ github.event.inputs.create_tag == 'true' }}
