@@ -1,3 +1,12 @@
+## [v2.1.0] - 2025-09-18
+
+### minor version bump
+- Version bumped from 2.0.0+6 to 2.1.0+7
+- Automated release build
+
+### Changes
+- See commit history for detailed changes
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
