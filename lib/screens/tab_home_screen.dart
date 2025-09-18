@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/tab_app_provider.dart';
+import '../providers/app_settings_provider.dart';
 import '../widgets/tab_bar_widget.dart';
+import '../widgets/wrapped_tab_bar_widget.dart';
 import 'tab_config_screen.dart';
 import 'tab_processing_screen.dart';
 import 'history_screen.dart';
 import 'folder_management_screen.dart';
+import 'app_settings_screen.dart';
 
 class TabHomeScreen extends StatefulWidget {
   const TabHomeScreen({super.key});
@@ -22,6 +25,7 @@ class _TabHomeScreenState extends State<TabHomeScreen> {
     const TabProcessingScreen(),
     const HistoryScreen(),
     const FolderManagementScreen(),
+    const AppSettingsScreen(),
   ];
 
   final List<String> _titles = [
@@ -29,12 +33,13 @@ class _TabHomeScreenState extends State<TabHomeScreen> {
     'Processing',
     'History',
     'Folders',
+    'Settings',
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TabAppProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<TabAppProvider, AppSettingsProvider>(
+      builder: (context, tabProvider, settingsProvider, child) {
         return Scaffold(
           appBar: AppBar(
             title: Text(_titles[_selectedIndex]),
@@ -50,7 +55,14 @@ class _TabHomeScreenState extends State<TabHomeScreen> {
             children: [
               // Only show tabs for Configuration and Processing screens
               if (_selectedIndex == 0 || _selectedIndex == 1) 
-                const TabBarWidget(),
+                settingsProvider.tabWrapEnabled
+                    ? WrappedTabBarWidget(
+                        wrapEnabled: settingsProvider.tabWrapEnabled,
+                        maxTabsPerRow: settingsProvider.maxTabsPerRow,
+                        tabHeight: settingsProvider.tabHeight,
+                        showTabNumbers: settingsProvider.showTabNumbers,
+                      )
+                    : const TabBarWidget(),
               Expanded(
                 child: IndexedStack(
                   index: _selectedIndex,
@@ -83,6 +95,10 @@ class _TabHomeScreenState extends State<TabHomeScreen> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.folder),
                 label: 'Folders',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.app_settings_alt),
+                label: 'Settings',
               ),
             ],
           ),

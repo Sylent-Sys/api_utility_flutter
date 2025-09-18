@@ -1,17 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../models/config.dart';
 import '../models/result.dart';
 import '../models/tab.dart';
 import '../services/processing_service.dart';
+import '../services/config_service.dart';
 import 'tab_manager.dart';
 
 class TabAppProvider extends ChangeNotifier {
   final ProcessingService _processingService = ProcessingService.instance;
   final TabManager _tabManager = TabManager();
+  final ConfigService _configService = ConfigService.instance;
 
   bool _isLoading = false;
   String? _error;
   ProcessingResult? _lastResult;
+  bool _autoSaveTabs = true;
+  Timer? _autoSaveDebounce;
 
   // Getters
   TabManager get tabManager => _tabManager;
@@ -37,7 +42,19 @@ class TabAppProvider extends ChangeNotifier {
   Future<void> _initialize() async {
     _setLoading(true);
     try {
+      // Load auto-save preference from app settings
+      try {
+        final settingsJson = await _configService.loadAppSettings();
+        if (settingsJson != null && settingsJson.containsKey('autoSaveTabs')) {
+          _autoSaveTabs = settingsJson['autoSaveTabs'] == true;
+        }
+      } catch (_) {
+        // ignore and keep default
+      }
+
       await _tabManager.loadTabs();
+      // Listen to tab manager changes for auto-save
+      _tabManager.addListener(_onTabManagerChanged);
       _clearError();
     } catch (e) {
       _setError('Failed to initialize tabs: $e');
@@ -46,30 +63,61 @@ class TabAppProvider extends ChangeNotifier {
     }
   }
 
+  void _onTabManagerChanged() {
+    if (_autoSaveTabs) {
+      _scheduleAutoSave();
+    }
+  }
+
+  // Live update for Auto Save Tabs
+  void setAutoSaveTabs(bool enabled) {
+    _autoSaveTabs = enabled;
+    if (_autoSaveTabs) {
+      _scheduleAutoSave();
+    }
+    notifyListeners();
+  }
+
+  void _scheduleAutoSave() {
+    _autoSaveDebounce?.cancel();
+    _autoSaveDebounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        await _tabManager.saveTabs();
+      } catch (e) {
+        debugPrint('Auto-save tabs failed: $e');
+      }
+    });
+  }
+
   // Tab management methods
   void addNewTab() {
     _tabManager.addNewTab();
     notifyListeners();
+    if (_autoSaveTabs) _scheduleAutoSave();
   }
 
   void closeTab(String tabId) {
     _tabManager.closeTab(tabId);
     notifyListeners();
+    if (_autoSaveTabs) _scheduleAutoSave();
   }
 
   void switchToTab(String tabId) {
     _tabManager.switchToTab(tabId);
     notifyListeners();
+    if (_autoSaveTabs) _scheduleAutoSave();
   }
 
   void updateTabTitle(String tabId, String title) {
     _tabManager.updateTabTitle(tabId, title);
     notifyListeners();
+    if (_autoSaveTabs) _scheduleAutoSave();
   }
 
   void duplicateTab(String tabId) {
     _tabManager.duplicateTab(tabId);
     notifyListeners();
+    if (_autoSaveTabs) _scheduleAutoSave();
   }
 
   // Configuration methods
@@ -111,6 +159,7 @@ class TabAppProvider extends ChangeNotifier {
     
     _tabManager.updateTabFilePath(currentTab!.id, filePath);
     notifyListeners();
+    if (_autoSaveTabs) _scheduleAutoSave();
   }
 
   // Processing methods
@@ -177,6 +226,8 @@ class TabAppProvider extends ChangeNotifier {
   @override
   void dispose() {
     _processingService.dispose();
+    _tabManager.removeListener(_onTabManagerChanged);
+    _autoSaveDebounce?.cancel();
     super.dispose();
   }
 }

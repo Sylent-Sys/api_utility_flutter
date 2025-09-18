@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FolderStructureService {
@@ -13,6 +14,7 @@ class FolderStructureService {
   Directory? _outputDirectory;
   Directory? _historyDirectory;
   Directory? _tempDirectory;
+  Directory? _backupDirectory;
 
   /// Initialize all required directories
   Future<void> initialize() async {
@@ -29,21 +31,19 @@ class FolderStructureService {
       _outputDirectory = Directory('${_appDirectory!.path}/output');
       _historyDirectory = Directory('${_appDirectory!.path}/history');
       _tempDirectory = Directory('${_appDirectory!.path}/temp');
+      _backupDirectory = Directory('${_appDirectory!.path}/backup');
 
       // Create all directories if they don't exist
       await _configDirectory!.create(recursive: true);
       await _outputDirectory!.create(recursive: true);
       await _historyDirectory!.create(recursive: true);
       await _tempDirectory!.create(recursive: true);
+      await _backupDirectory!.create(recursive: true);
 
-      // ignore: avoid_print
-      print('[FolderStructure] documentsDir: ${documentsDir.path}');
-      // ignore: avoid_print
-      print('[FolderStructure] appDirectory: ${_appDirectory!.path}');
-      // ignore: avoid_print
-      print('[FolderStructure] configDirectory: ${_configDirectory!.path}');
-      // ignore: avoid_print
-      print('[FolderStructure] configFilePath: $configFilePath');
+      debugPrint('[FolderStructure] documentsDir: ${documentsDir.path}');
+      debugPrint('[FolderStructure] appDirectory: ${_appDirectory!.path}');
+      debugPrint('[FolderStructure] configDirectory: ${_configDirectory!.path}');
+      debugPrint('[FolderStructure] configFilePath: $configFilePath');
 
       // Create README file in main directory
       await _createReadmeFile();
@@ -102,15 +102,37 @@ class FolderStructureService {
     return _tempDirectory!;
   }
 
+  /// Get the backup directory
+  Directory get backupDirectory {
+    if (_backupDirectory == null) {
+      throw Exception(
+        'FolderStructureService not initialized. Call initialize() first.',
+      );
+    }
+    return _backupDirectory!;
+  }
+
   /// Get configuration file path
   String get configFilePath => '${configDirectory.path}/api_config.json';
 
   /// Get tabs file path
   String get tabsFilePath => '${configDirectory.path}/tabs.json';
 
+  /// Get app settings file path
+  String get settingsFilePath => '${configDirectory.path}/app_settings.json';
+
   /// Get history file path
   String get historyFilePath =>
       '${historyDirectory.path}/processing_history.json';
+
+  /// Backup file path with timestamp
+  String getBackupFilePath() {
+    final timestamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .split('.')[0];
+    return '${backupDirectory.path}/backup_$timestamp.zip';
+  }
 
   /// Get output file path with timestamp
   String getOutputFilePath(String pattern) {
@@ -328,8 +350,7 @@ For support or questions, please refer to the application documentation.
     try {
       // This would need platform-specific implementation
       // For now, we'll just return the path
-      // ignore: avoid_print
-      print('App directory: ${appDirectory.path}');
+      debugPrint('App directory: ${appDirectory.path}');
     } catch (e) {
       throw Exception('Failed to open app directory: $e');
     }
