@@ -2,21 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/tab_app_provider.dart';
 import '../models/tab.dart';
+import '../providers/app_settings_provider.dart';
 
 class TabBarWidget extends StatelessWidget {
   const TabBarWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TabAppProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<TabAppProvider, AppSettingsProvider>(
+      builder: (context, provider, settings, child) {
         final tabManager = provider.tabManager;
         if (!tabManager.hasTabs) {
           return const SizedBox.shrink();
         }
 
         return Container(
-          height: 48,
+          height: settings.tabHeight,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             border: Border(
@@ -36,7 +37,7 @@ class TabBarWidget extends StatelessWidget {
                     final tab = tabManager.tabs[index];
                     final isActive = tab.id == tabManager.activeTabId;
                     
-                    return _buildTab(context, tab, isActive, provider);
+                    return _buildTab(context, tab, isActive, provider, index + 1, settings);
                   },
                 ),
               ),
@@ -48,7 +49,7 @@ class TabBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildTab(BuildContext context, TabData tab, bool isActive, TabAppProvider provider) {
+  Widget _buildTab(BuildContext context, TabData tab, bool isActive, TabAppProvider provider, int displayIndex, AppSettingsProvider settings) {
     return Container(
       constraints: const BoxConstraints(minWidth: 120, maxWidth: 200),
       child: Material(
@@ -59,6 +60,7 @@ class TabBarWidget extends StatelessWidget {
           onTap: () => provider.switchToTab(tab.id),
           onSecondaryTap: () => _showTabContextMenu(context, tab, provider),
           child: Container(
+            height: settings.tabHeight - 8,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -76,7 +78,7 @@ class TabBarWidget extends StatelessWidget {
                 // Tab title
                 Expanded(
                   child: Text(
-                    tab.title,
+                    settings.showTabNumbers ? '$displayIndex. ${tab.title}' : tab.title,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,

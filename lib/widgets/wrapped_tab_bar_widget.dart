@@ -46,15 +46,36 @@ class WrappedTabBarWidget extends StatelessWidget {
   }
 
   Widget _buildWrappedTabs(BuildContext context, TabManager tabManager, TabAppProvider provider) {
+    // Enforce maxTabsPerRow by chunking the tab list into rows
+    final tabs = tabManager.tabs;
+    final rows = <List<int>>[];
+    for (int i = 0; i < tabs.length; i += maxTabsPerRow) {
+      final end = (i + maxTabsPerRow) > tabs.length ? tabs.length : (i + maxTabsPerRow);
+      rows.add(List<int>.generate(end - i, (j) => i + j));
+    }
+
     return Container(
       padding: const EdgeInsets.all(8),
-      child: Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        alignment: WrapAlignment.start,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ..._buildTabWidgets(context, tabManager, provider),
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  for (final idx in row)
+                    _buildTab(
+                      context,
+                      tabs[idx],
+                      tabs[idx].id == tabManager.activeTabId,
+                      provider,
+                      isWrapped: true,
+                      displayIndex: idx + 1,
+                    ),
+                ],
+              ),
+            ),
           _buildAddTabButton(context, provider),
         ],
       ),
@@ -91,14 +112,7 @@ class WrappedTabBarWidget extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildTabWidgets(BuildContext context, TabManager tabManager, TabAppProvider provider) {
-    return tabManager.tabs.asMap().entries.map((entry) {
-      final index = entry.key;
-      final tab = entry.value;
-      final isActive = tab.id == tabManager.activeTabId;
-      return _buildTab(context, tab, isActive, provider, isWrapped: true, displayIndex: index + 1);
-    }).toList();
-  }
+  // Removed unused helper that built all tab widgets in one list.
 
   Widget _buildTab(BuildContext context, TabData tab, bool isActive, TabAppProvider provider, {bool isWrapped = false, int? displayIndex}) {
     return Container(

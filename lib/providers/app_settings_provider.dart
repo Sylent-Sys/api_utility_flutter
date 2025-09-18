@@ -77,6 +77,7 @@ class AppSettingsProvider extends ChangeNotifier {
     _tabWrapEnabled = false;
     _showTabNumbers = true;
     _autoSaveTabs = true;
+    _includeOutputInBackup = true;
     _maxTabsPerRow = 5;
     _tabHeight = 48.0;
     _themeMode = 'system';

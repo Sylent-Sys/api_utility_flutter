@@ -614,6 +614,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
   void _resetSettings(AppSettingsProvider settingsProvider) {
     settingsProvider.resetToDefaults();
+    settingsProvider.save();
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
