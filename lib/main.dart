@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/app_provider.dart';
-import 'screens/home_screen.dart';
+import 'providers/tab_app_provider.dart';
+import 'screens/tab_home_screen.dart';
 import 'services/folder_structure_service.dart';
 
 void main() async {
@@ -24,7 +24,7 @@ class ApiUtilityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => AppProvider(),
+      create: (context) => TabAppProvider(),
       child: MaterialApp(
         title: 'API Utility Flutter',
         theme: ThemeData(
@@ -56,7 +56,7 @@ class ApiUtilityApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const HomeScreen(),
+        home: const TabHomeScreen(),
         debugShowCheckedModeBanner: false,
       ),
     );

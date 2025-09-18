@@ -13,6 +13,11 @@ class ProcessingHistory {
   final List<ApiResult> results;
   final bool isTestMode;
   final int? testRows;
+  
+  // Tab-specific information
+  final String tabId;
+  final String tabName;
+  final DateTime tabCreatedAt;
 
   const ProcessingHistory({
     required this.id,
@@ -27,10 +32,24 @@ class ProcessingHistory {
     required this.results,
     this.isTestMode = false,
     this.testRows,
+    required this.tabId,
+    required this.tabName,
+    required this.tabCreatedAt,
   });
 
   double get successRate => totalRows > 0 ? successCount / totalRows : 0.0;
   double get errorRate => totalRows > 0 ? errorCount / totalRows : 0.0;
+
+  // Generate tab-specific history ID
+  static String generateTabHistoryId(String tabName, String tabId, DateTime timestamp) {
+    final sanitizedTabName = tabName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    final dateStr = '${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}';
+    final timeStr = '${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}';
+    return '$sanitizedTabName-$tabId-$dateStr-$timeStr';
+  }
+
+  // Get display name for history entry
+  String get displayName => '$tabName ($formattedTimestamp)';
 
   String get formattedTimestamp {
     return '${timestamp.day}/${timestamp.month}/${timestamp.year} ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
@@ -65,6 +84,9 @@ class ProcessingHistory {
       'results': results.map((r) => r.toJson()).toList(),
       'isTestMode': isTestMode,
       'testRows': testRows,
+      'tabId': tabId,
+      'tabName': tabName,
+      'tabCreatedAt': tabCreatedAt.toIso8601String(),
     };
   }
 
@@ -84,6 +106,11 @@ class ProcessingHistory {
           .toList(),
       isTestMode: json['isTestMode'] ?? false,
       testRows: json['testRows'],
+      tabId: json['tabId'] ?? '',
+      tabName: json['tabName'] ?? 'Unknown Tab',
+      tabCreatedAt: json['tabCreatedAt'] != null 
+          ? DateTime.parse(json['tabCreatedAt']) 
+          : DateTime.now(),
     );
   }
 }

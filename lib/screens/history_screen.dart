@@ -23,6 +23,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _loadHistory();
   }
 
+
   Future<void> _loadHistory() async {
     setState(() {
       _isLoading = true;

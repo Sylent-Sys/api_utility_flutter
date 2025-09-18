@@ -96,4 +96,31 @@ class ConfigService {
       throw Exception('Failed to save configuration to file: $e');
     }
   }
+
+  // Tab management methods
+  Future<void> saveTabs(List<Map<String, dynamic>> tabsJson) async {
+    try {
+      final tabsFile = File(_folderService.tabsFilePath);
+      final jsonString = jsonEncode(tabsJson);
+      await tabsFile.writeAsString(jsonString);
+    } catch (e) {
+      throw Exception('Failed to save tabs: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>?> loadTabs() async {
+    try {
+      final tabsFile = File(_folderService.tabsFilePath);
+      
+      if (!await tabsFile.exists()) {
+        return null;
+      }
+
+      final jsonString = await tabsFile.readAsString();
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList.cast<Map<String, dynamic>>();
+    } catch (e) {
+      return null;
+    }
+  }
 }

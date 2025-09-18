@@ -105,6 +105,9 @@ class FolderStructureService {
   /// Get configuration file path
   String get configFilePath => '${configDirectory.path}/api_config.json';
 
+  /// Get tabs file path
+  String get tabsFilePath => '${configDirectory.path}/tabs.json';
+
   /// Get history file path
   String get historyFilePath =>
       '${historyDirectory.path}/processing_history.json';

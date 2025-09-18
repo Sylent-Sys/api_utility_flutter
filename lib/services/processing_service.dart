@@ -40,6 +40,9 @@ class ProcessingService {
     required ApiConfig config,
     required String inputFilePath,
     int? testRows,
+    String? tabId,
+    String? tabName,
+    DateTime? tabCreatedAt,
   }) async {
     if (_isProcessing) {
       throw Exception('Processing is already in progress');
@@ -118,10 +121,13 @@ class ProcessingService {
         config.outputPattern,
       );
 
-      // Save to history
+      // Save to history with tab information
+      final timestamp = DateTime.now();
       final history = ProcessingHistory(
-        id: _uuid.v4(),
-        timestamp: DateTime.now(),
+        id: tabId != null && tabName != null 
+            ? ProcessingHistory.generateTabHistoryId(tabName, tabId, timestamp)
+            : _uuid.v4(),
+        timestamp: timestamp,
         inputFileName: _fileService.getFileName(inputFilePath),
         inputFilePath: inputFilePath,
         outputPath: outputPath,
@@ -132,6 +138,9 @@ class ProcessingService {
         results: results,
         isTestMode: testRows != null,
         testRows: testRows,
+        tabId: tabId ?? '',
+        tabName: tabName ?? 'Unknown Tab',
+        tabCreatedAt: tabCreatedAt ?? DateTime.now(),
       );
 
       await _historyService.addToHistory(history);

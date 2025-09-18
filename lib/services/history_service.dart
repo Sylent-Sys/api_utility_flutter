@@ -107,8 +107,47 @@ class HistoryService {
     return history.where((h) {
       return h.inputFileName.toLowerCase().contains(queryLower) ||
           h.configName.toLowerCase().contains(queryLower) ||
-          h.outputPath.toLowerCase().contains(queryLower);
+          h.outputPath.toLowerCase().contains(queryLower) ||
+          h.tabName.toLowerCase().contains(queryLower);
     }).toList();
+  }
+
+  // Get history for a specific tab
+  Future<List<ProcessingHistory>> getHistoryByTab(String tabId) async {
+    final history = await getHistory();
+    return history.where((h) => h.tabId == tabId).toList();
+  }
+
+  // Get history grouped by tab
+  Future<Map<String, List<ProcessingHistory>>> getHistoryByTabs() async {
+    final history = await getHistory();
+    final Map<String, List<ProcessingHistory>> groupedHistory = {};
+    
+    for (final h in history) {
+      if (!groupedHistory.containsKey(h.tabId)) {
+        groupedHistory[h.tabId] = [];
+      }
+      groupedHistory[h.tabId]!.add(h);
+    }
+    
+    // Sort each tab's history by timestamp (newest first)
+    for (final tabId in groupedHistory.keys) {
+      groupedHistory[tabId]!.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    }
+    
+    return groupedHistory;
+  }
+
+  // Get all unique tab names from history (including deleted tabs)
+  Future<List<String>> getAllTabNames() async {
+    final history = await getHistory();
+    final Set<String> tabNames = {};
+    
+    for (final h in history) {
+      tabNames.add(h.tabName);
+    }
+    
+    return tabNames.toList()..sort();
   }
 
   Future<List<ProcessingHistory>> getHistoryByDateRange(
