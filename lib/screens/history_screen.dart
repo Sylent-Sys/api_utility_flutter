@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/processing_history.dart';
 import '../services/history_service.dart';
+import '../utils/utils.dart';
 import 'result_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -16,13 +18,43 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   String _sortBy = 'newest'; // newest, oldest, success_rate, error_rate
+  StreamSubscription<List<ProcessingHistory>>? _historySubscription;
 
   @override
   void initState() {
     super.initState();
     _loadHistory();
+    _setupHistoryStream();
+    _setupAutoRefresh();
   }
 
+  @override
+  void dispose() {
+    _historySubscription?.cancel();
+    super.dispose();
+  }
+
+
+  void _setupHistoryStream() {
+    _historySubscription = _historyService.historyStream.listen(
+      (history) {
+        if (mounted) {
+          setState(() {
+            _history = history;
+            _isLoading = false;
+          });
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          UIUtils.showValidationErrorSnackBar(context, ['Failed to load history: $error']);
+        }
+      },
+    );
+  }
 
   Future<void> _loadHistory() async {
     setState(() {
@@ -40,9 +72,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load history: $e')));
+        UIUtils.showValidationErrorSnackBar(context, ['Failed to load history: $e']);
+      }
+    }
+  }
+
+  void _setupAutoRefresh() {
+    // Auto-refresh every 30 seconds when screen is active
+    Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _refreshHistory();
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _refreshHistory() async {
+    try {
+      await _historyService.refreshHistory();
+    } catch (e) {
+      if (mounted) {
+        UIUtils.showValidationErrorSnackBar(context, ['Failed to refresh history: $e']);
       }
     }
   }
@@ -118,7 +169,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: RefreshIndicator(
+        onRefresh: _refreshHistory,
+        child: _buildBody(),
+      ),
     );
   }
 
@@ -287,69 +341,43 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _deleteHistory(ProcessingHistory history) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await UIUtils.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete History'),
-        content: Text(
-          'Are you sure you want to delete this processing history?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: 'Delete History',
+      content: 'Are you sure you want to delete this processing history?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
     );
 
     if (confirmed == true) {
       try {
         await _historyService.removeFromHistory(history.id);
-        await _loadHistory();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('History deleted successfully')),
-          );
+          UIUtils.showSuccessSnackBar(context, 'History deleted successfully');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete history: $e')),
-          );
+          UIUtils.showValidationErrorSnackBar(context, ['Failed to delete history: $e']);
         }
       }
     }
   }
 
-  void _showSearchDialog() {
-    showDialog(
+  void _showSearchDialog() async {
+    final result = await UIUtils.showTextInputDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Search History'),
-        content: TextField(
-          decoration: const InputDecoration(
-            hintText: 'Search by filename, config, or path...',
-            border: OutlineInputBorder(),
-          ),
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      title: 'Search History',
+      labelText: 'Search by filename, config, or path...',
+      initialValue: _searchQuery,
+      confirmText: 'Search',
+      cancelText: 'Cancel',
     );
+    
+    if (result != null) {
+      setState(() {
+        _searchQuery = result;
+      });
+    }
   }
 
   void _showSortDialog() {
@@ -390,40 +418,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _showClearHistoryDialog() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await UIUtils.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear All History'),
-        content: const Text(
-          'Are you sure you want to delete all processing history? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
+      title: 'Clear All History',
+      content: 'Are you sure you want to delete all processing history? This action cannot be undone.',
+      confirmText: 'Clear All',
+      cancelText: 'Cancel',
     );
 
     if (confirmed == true) {
       try {
         await _historyService.clearHistory();
-        await _loadHistory();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('All history cleared successfully')),
-          );
+          UIUtils.showSuccessSnackBar(context, 'All history cleared successfully');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to clear history: $e')),
-          );
+          UIUtils.showValidationErrorSnackBar(context, ['Failed to clear history: $e']);
         }
       }
     }

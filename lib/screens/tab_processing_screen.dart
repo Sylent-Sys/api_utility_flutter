@@ -3,7 +3,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import '../providers/tab_app_provider.dart';
 import '../services/file_service.dart';
-import '../models/config.dart';
+import '../utils/utils.dart';
 import 'result_screen.dart';
 
 class TabProcessingScreen extends StatefulWidget {
@@ -103,58 +103,12 @@ class _TabProcessingScreenState extends State<TabProcessingScreen> {
 
   Widget _buildValidationStatus(TabAppProvider provider) {
     final config = provider.currentConfig;
-    final validationErrors = _getValidationErrors(config);
+    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
     final isValid = validationErrors.isEmpty;
 
-    return Card(
-      color: isValid 
-          ? Colors.green.shade50 
-          : Colors.red.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(
-              isValid ? Icons.check_circle : Icons.error,
-              color: isValid ? Colors.green.shade700 : Colors.red.shade700,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isValid ? 'Configuration Valid' : 'Configuration Invalid',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isValid ? Colors.green.shade700 : Colors.red.shade700,
-                    ),
-                  ),
-                  if (validationErrors.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    ...validationErrors.map((error) => Text(
-                      '• $error',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.red.shade700,
-                      ),
-                    )),
-                  ] else ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'All required fields are properly configured',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return UIUtils.buildValidationStatusCard(
+      isValid: isValid,
+      validationErrors: validationErrors,
     );
   }
 
@@ -566,36 +520,8 @@ class _TabProcessingScreenState extends State<TabProcessingScreen> {
   Future<void> _startProcessing(TabAppProvider provider) async {
     // Check if configuration is valid before processing
     if (!provider.currentConfig.isValid) {
-      final validationErrors = _getValidationErrors(provider.currentConfig);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Cannot start processing: Configuration is invalid',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              ...validationErrors.take(3).map((error) => Text('• $error')),
-              if (validationErrors.length > 3)
-                Text('• ... and ${validationErrors.length - 3} more errors'),
-            ],
-          ),
-          backgroundColor: Colors.red.shade700,
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Go to Config',
-            textColor: Colors.white,
-            onPressed: () {
-              // Switch to configuration tab
-              // This would need to be implemented in the parent widget
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ),
-      );
+      final validationErrors = ValidationUtils.getConfigValidationErrors(provider.currentConfig);
+      UIUtils.showValidationErrorSnackBar(context, validationErrors);
       return;
     }
 
@@ -610,64 +536,6 @@ class _TabProcessingScreenState extends State<TabProcessingScreen> {
     }
   }
 
-  List<String> _getValidationErrors(ApiConfig config) {
-    final errors = <String>[];
-    
-    if (config.baseUrl.isEmpty) {
-      errors.add('Base URL is required');
-    } else {
-      // More flexible URL validation
-      final uri = Uri.tryParse(config.baseUrl);
-      if (uri == null) {
-        // Try adding http:// if no scheme
-        final uriWithScheme = Uri.tryParse('http://${config.baseUrl}');
-        if (uriWithScheme == null || !uriWithScheme.hasAuthority) {
-          errors.add('Base URL must be a valid URL');
-        }
-      } else if (!uri.hasScheme && !uri.hasAuthority) {
-        errors.add('Base URL must be a valid URL');
-      }
-    }
-    
-    if (config.endpointPath.isEmpty) {
-      errors.add('Endpoint Path is required');
-    }
-    
-    if (config.authMethod == 'bearer' && config.token.isEmpty) {
-      errors.add('Bearer Token is required');
-    }
-    
-    if (config.authMethod == 'api_key' && config.apiKey.isEmpty) {
-      errors.add('API Key is required');
-    }
-    
-    if (config.authMethod == 'basic') {
-      if (config.username.isEmpty) {
-        errors.add('Username is required for Basic Auth');
-      }
-      if (config.password.isEmpty) {
-        errors.add('Password is required for Basic Auth');
-      }
-    }
-    
-    if (config.timeoutSec <= 0) {
-      errors.add('Timeout must be greater than 0');
-    }
-    
-    if (config.batchSize <= 0) {
-      errors.add('Batch Size must be greater than 0');
-    }
-    
-    if (config.rateLimitSecond < 0) {
-      errors.add('Rate Limit cannot be negative');
-    }
-    
-    if (config.maxRetries < 0) {
-      errors.add('Max Retries cannot be negative');
-    }
-    
-    return errors;
-  }
 
   void _viewResults(TabAppProvider provider) {
     Navigator.of(context).push(

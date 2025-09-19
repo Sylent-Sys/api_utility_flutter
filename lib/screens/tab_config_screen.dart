@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config.dart';
 import '../providers/tab_app_provider.dart';
+import '../utils/utils.dart';
 
 class TabConfigScreen extends StatefulWidget {
   const TabConfigScreen({super.key});
@@ -121,166 +122,25 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
     final currentTab = provider.currentTab;
     if (currentTab == null) return const SizedBox.shrink();
 
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.tab,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Current Tab: ${currentTab.title}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  Text(
-                    'Last modified: ${_formatDateTime(currentTab.lastModified)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.edit,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-              onPressed: () => _showRenameDialog(provider, currentTab.id),
-            ),
-          ],
-        ),
-      ),
+    return UIUtils.buildTabInfoCard(
+      context: context,
+      tabTitle: currentTab.title,
+      lastModified: _formatDateTime(currentTab.lastModified),
+      onEdit: () => _showRenameDialog(provider, currentTab.id),
     );
   }
 
   Widget _buildValidationStatus(TabAppProvider provider) {
     final config = provider.currentConfig;
-    final validationErrors = _getValidationErrors(config);
+    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
     final isValid = validationErrors.isEmpty;
 
-    return Card(
-      color: isValid 
-          ? Colors.green.shade50 
-          : Colors.red.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(
-              isValid ? Icons.check_circle : Icons.error,
-              color: isValid ? Colors.green.shade700 : Colors.red.shade700,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isValid ? 'Configuration Valid' : 'Configuration Invalid',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isValid ? Colors.green.shade700 : Colors.red.shade700,
-                    ),
-                  ),
-                  if (!isValid) ...[
-                    const SizedBox(height: 4),
-                    ...validationErrors.map((error) => Text(
-                      '• $error',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.red.shade700,
-                      ),
-                    )),
-                  ] else ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'All required fields are properly configured',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return UIUtils.buildValidationStatusCard(
+      isValid: isValid,
+      validationErrors: validationErrors,
     );
   }
 
-  List<String> _getValidationErrors(ApiConfig config) {
-    final errors = <String>[];
-    
-    if (config.baseUrl.isEmpty) {
-      errors.add('Base URL is required');
-    } else {
-      // More flexible URL validation
-      final uri = Uri.tryParse(config.baseUrl);
-      if (uri == null) {
-        // Try adding http:// if no scheme
-        final uriWithScheme = Uri.tryParse('http://${config.baseUrl}');
-        if (uriWithScheme == null || !uriWithScheme.hasAuthority) {
-          errors.add('Base URL must be a valid URL');
-        }
-      } else if (!uri.hasScheme && !uri.hasAuthority) {
-        errors.add('Base URL must be a valid URL');
-      }
-    }
-    
-    if (config.endpointPath.isEmpty) {
-      errors.add('Endpoint Path is required');
-    }
-    
-    if (config.authMethod == 'bearer' && config.token.isEmpty) {
-      errors.add('Bearer Token is required');
-    }
-    
-    if (config.authMethod == 'api_key' && config.apiKey.isEmpty) {
-      errors.add('API Key is required');
-    }
-    
-    if (config.authMethod == 'basic') {
-      if (config.username.isEmpty) {
-        errors.add('Username is required for Basic Auth');
-      }
-      if (config.password.isEmpty) {
-        errors.add('Password is required for Basic Auth');
-      }
-    }
-    
-    if (config.timeoutSec <= 0) {
-      errors.add('Timeout must be greater than 0');
-    }
-    
-    if (config.batchSize <= 0) {
-      errors.add('Batch Size must be greater than 0');
-    }
-    
-    if (config.rateLimitSecond < 0) {
-      errors.add('Rate Limit cannot be negative');
-    }
-    
-    if (config.maxRetries < 0) {
-      errors.add('Max Retries cannot be negative');
-    }
-    
-    return errors;
-  }
 
   void _syncFromProvider(ApiConfig config) {
     _baseUrlController.text = config.baseUrl;
@@ -293,22 +153,14 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
     _batchSizeController.text = config.batchSize.toString();
     _rateLimitController.text = config.rateLimitSecond.toString();
     _maxRetriesController.text = config.maxRetries.toString();
-    _stringKeysController.text = config.stringKeys.join(', ');
+    _stringKeysController.text = ConfigUtils.stringKeysToString(config.stringKeys);
 
     _authMethod = config.authMethod;
     _requestMethod = config.requestMethod;
   }
 
   Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Text(
-        title,
-        style: Theme.of(
-          context,
-        ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-      ),
-    );
+    return UIUtils.buildSectionHeader(context, title);
   }
 
   Widget _buildUrlSection() {
@@ -321,12 +173,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             hintText: 'http://localhost:7071/api',
             border: OutlineInputBorder(),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Base URL is required';
-            }
-            return null;
-          },
+          validator: (value) => ValidationUtils.validateUrl(value, fieldName: 'Base URL'),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -336,12 +183,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             hintText: '/FYP/Bengkel/AttendanceMonitoring/Create',
             border: OutlineInputBorder(),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Endpoint path is required';
-            }
-            return null;
-          },
+          validator: (value) => ValidationUtils.validateRequired(value, fieldName: 'Endpoint path'),
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
@@ -406,12 +248,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
               border: OutlineInputBorder(),
             ),
             obscureText: true,
-            validator: (value) {
-              if (_authMethod == 'bearer' && (value == null || value.isEmpty)) {
-                return 'Token is required for Bearer authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'bearer'),
           ),
         ] else if (_authMethod == 'api_key') ...[
           TextFormField(
@@ -421,13 +258,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
               border: OutlineInputBorder(),
             ),
             obscureText: true,
-            validator: (value) {
-              if (_authMethod == 'api_key' &&
-                  (value == null || value.isEmpty)) {
-                return 'API Key is required for API Key authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'api_key'),
           ),
         ] else if (_authMethod == 'basic') ...[
           TextFormField(
@@ -436,12 +267,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
               labelText: 'Username',
               border: OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (_authMethod == 'basic' && (value == null || value.isEmpty)) {
-                return 'Username is required for Basic authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'basic'),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -451,12 +277,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
               border: OutlineInputBorder(),
             ),
             obscureText: true,
-            validator: (value) {
-              if (_authMethod == 'basic' && (value == null || value.isEmpty)) {
-                return 'Password is required for Basic authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validatePassword(value, _authMethod),
           ),
         ],
       ],
@@ -476,16 +297,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Timeout is required';
-                  }
-                  final timeout = int.tryParse(value);
-                  if (timeout == null || timeout <= 0) {
-                    return 'Timeout must be a positive number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validatePositiveInteger(value, fieldName: 'Timeout'),
               ),
             ),
             const SizedBox(width: 16),
@@ -497,16 +309,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Batch size is required';
-                  }
-                  final batchSize = int.tryParse(value);
-                  if (batchSize == null || batchSize <= 0) {
-                    return 'Batch size must be a positive number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validatePositiveInteger(value, fieldName: 'Batch size'),
               ),
             ),
           ],
@@ -522,16 +325,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Rate limit is required';
-                  }
-                  final rateLimit = double.tryParse(value);
-                  if (rateLimit == null || rateLimit < 0) {
-                    return 'Rate limit must be a non-negative number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validateNonNegativeDouble(value, fieldName: 'Rate limit'),
               ),
             ),
             const SizedBox(width: 16),
@@ -543,16 +337,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Max retries is required';
-                  }
-                  final maxRetries = int.tryParse(value);
-                  if (maxRetries == null || maxRetries < 0) {
-                    return 'Max retries must be a non-negative number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validateNonNegativeInteger(value, fieldName: 'Max retries'),
               ),
             ),
           ],
@@ -576,16 +361,11 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: provider.isLoading ? null : _saveConfig,
-                icon: provider.isLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: const Text('Save Configuration'),
+              child: UIUtils.buildLoadingButton(
+                onPressed: _saveConfig,
+                label: 'Save Configuration',
+                isLoading: provider.isLoading,
+                icon: Icons.save,
               ),
             ),
             const SizedBox(width: 16),
@@ -600,29 +380,9 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
         ),
         if (provider.error != null) ...[
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              border: Border.all(color: Colors.red.shade200),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.error, color: Colors.red.shade700),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    provider.error!,
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: provider.clearError,
-                ),
-              ],
-            ),
+          UIUtils.buildErrorMessage(
+            message: provider.error!,
+            onDismiss: provider.clearError,
           ),
         ],
       ],
@@ -647,121 +407,56 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
       maxRetries: int.parse(_maxRetriesController.text),
       requestMethod: _requestMethod,
       authMethod: _authMethod,
-      stringKeys: _stringKeysController.text
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList(),
+      stringKeys: ConfigUtils.parseStringKeys(_stringKeysController.text),
     );
 
     // Check for validation errors
-    final validationErrors = _getValidationErrors(config);
+    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
     if (validationErrors.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Configuration has validation errors:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              ...validationErrors.map((error) => Text('• $error')),
-            ],
-          ),
-          backgroundColor: Colors.red.shade700,
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Dismiss',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ),
-      );
+      UIUtils.showValidationErrorSnackBar(context, validationErrors);
       return;
     }
 
     // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Configuration saved successfully!'),
-        backgroundColor: Colors.green.shade700,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    UIUtils.showSuccessSnackBar(context, 'Configuration saved successfully!');
 
     context.read<TabAppProvider>().saveCurrentTabConfig(config);
   }
 
-  void _resetConfig() {
-    showDialog(
+  void _resetConfig() async {
+    final confirmed = await UIUtils.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset Configuration'),
-        content: const Text(
-          'Are you sure you want to reset all configuration to default values for this tab?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.read<TabAppProvider>().resetCurrentTabConfig();
-              _initializeControllers();
-            },
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
+      title: 'Reset Configuration',
+      content: 'Are you sure you want to reset all configuration to default values for this tab?',
+      confirmText: 'Reset',
+      cancelText: 'Cancel',
     );
+    
+    if (confirmed == true && mounted) {
+      context.read<TabAppProvider>().resetCurrentTabConfig();
+      _initializeControllers();
+    }
   }
 
-  void _showRenameDialog(TabAppProvider provider, String tabId) {
+  void _showRenameDialog(TabAppProvider provider, String tabId) async {
     final currentTab = provider.currentTab;
     if (currentTab == null) return;
 
-    final controller = TextEditingController(text: currentTab.title);
-    
-    showDialog(
+    final newTitle = await UIUtils.showTextInputDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename Tab'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Tab Name',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final newTitle = controller.text.trim();
-              if (newTitle.isNotEmpty && newTitle != currentTab.title) {
-                provider.updateTabTitle(tabId, newTitle);
-              }
-              Navigator.of(context).pop();
-            },
-            child: const Text('Rename'),
-          ),
-        ],
-      ),
+      title: 'Rename Tab',
+      labelText: 'Tab Name',
+      initialValue: currentTab.title,
+      confirmText: 'Rename',
+      cancelText: 'Cancel',
     );
+    
+    if (newTitle != null && newTitle.isNotEmpty && newTitle != currentTab.title) {
+      provider.updateTabTitle(tabId, newTitle);
+    }
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return UIUtils.formatDateTime(dateTime);
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import '../models/processing_history.dart';
@@ -13,6 +14,11 @@ class HistoryService {
 
   final FolderStructureService _folderService = FolderStructureService.instance;
   List<ProcessingHistory>? _cachedHistory;
+  final StreamController<List<ProcessingHistory>> _historyController = 
+      StreamController<List<ProcessingHistory>>.broadcast();
+
+  /// Stream of history changes
+  Stream<List<ProcessingHistory>> get historyStream => _historyController.stream;
 
   Future<List<ProcessingHistory>> getHistory() async {
     if (_cachedHistory != null) return _cachedHistory!;
@@ -54,6 +60,9 @@ class HistoryService {
 
     // Update cache
     _cachedHistory = currentHistory;
+    
+    // Notify listeners
+    _historyController.add(List.from(currentHistory));
   }
 
   Future<void> removeFromHistory(String historyId) async {
@@ -66,6 +75,9 @@ class HistoryService {
 
     // Update cache
     _cachedHistory = currentHistory;
+    
+    // Notify listeners
+    _historyController.add(List.from(currentHistory));
   }
 
   Future<void> clearHistory() async {
@@ -75,6 +87,9 @@ class HistoryService {
         await historyFile.delete();
       }
       _cachedHistory = [];
+      
+      // Notify listeners
+      _historyController.add([]);
     } catch (e) {
       throw Exception('Failed to clear history: $e');
     }
@@ -116,6 +131,18 @@ class HistoryService {
   Future<List<ProcessingHistory>> getHistoryByTab(String tabId) async {
     final history = await getHistory();
     return history.where((h) => h.tabId == tabId).toList();
+  }
+
+  /// Refresh history from storage and notify listeners
+  Future<void> refreshHistory() async {
+    _cachedHistory = null; // Clear cache to force reload
+    final history = await getHistory();
+    _historyController.add(List.from(history));
+  }
+
+  /// Dispose the stream controller
+  void dispose() {
+    _historyController.close();
   }
 
   // Get history grouped by tab
