@@ -227,11 +227,15 @@ class WrappedTabBarWidget extends StatelessWidget {
     final RenderBox? renderBox = tabKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) {
       // Fallback to default position if we can't get the render box
-      showMenu<String>(
-        context: context,
-        position: const RelativeRect.fromLTRB(100, 100, 0, 0),
-        items: _buildMenuItems(provider),
-      ).then((value) => _handleMenuSelection(value, context, tab, provider));
+    showMenu<String>(
+      context: context,
+      position: const RelativeRect.fromLTRB(100, 100, 0, 0),
+      items: _buildMenuItems(provider),
+    ).then((value) {
+      if (context.mounted) {
+        _handleMenuSelection(value, context, tab, provider);
+      }
+    });
       return;
     }
     
@@ -246,7 +250,11 @@ class WrappedTabBarWidget extends StatelessWidget {
         position.dy + 200,
       ),
       items: _buildMenuItems(provider),
-    ).then((value) => _handleMenuSelection(value, context, tab, provider));
+    ).then((value) {
+      if (context.mounted) {
+        _handleMenuSelection(value, context, tab, provider);
+      }
+    });
   }
 
   List<PopupMenuEntry<String>> _buildMenuItems(TabAppProvider provider) {
