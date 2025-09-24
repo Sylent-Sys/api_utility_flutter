@@ -12,35 +12,102 @@ class TabAppProvider extends ChangeNotifier {
   final TabManager _tabManager = TabManager();
   final ConfigService _configService = ConfigService.instance;
 
-  bool _isLoading = false;
-  String? _error;
-  ProcessingResult? _lastResult;
+  // Tab-specific processing states
+  final Map<String, bool> _tabLoadingStates = {};
+  final Map<String, String?> _tabErrorStates = {};
+  final Map<String, ProcessingResult?> _tabResultStates = {};
+  final Map<String, bool> _tabProcessingStates = {};
   bool _autoSaveTabs = true;
   Timer? _autoSaveDebounce;
 
   // Getters
   TabManager get tabManager => _tabManager;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-  ProcessingResult? get lastResult => _lastResult;
-  bool get isProcessing => _processingService.isProcessing;
+  bool get isLoading => _getCurrentTabLoadingState();
+  String? get error => _getCurrentTabErrorState();
+  ProcessingResult? get lastResult => _getCurrentTabResultState();
+  bool get isProcessing => _getCurrentTabProcessingState();
 
   // Current tab getters
   TabData? get currentTab => _tabManager.activeTab;
   ApiConfig get currentConfig => currentTab?.config ?? const ApiConfig();
   String? get currentSelectedFilePath => currentTab?.selectedFilePath;
 
-  // Streams
-  Stream<ProcessingProgress> get progressStream =>
-      _processingService.progressStream;
-  Stream<List<ApiResult>> get resultsStream => _processingService.resultsStream;
+  // Helper methods for tab-specific states
+  bool _getCurrentTabLoadingState() {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return false;
+    return _tabLoadingStates[currentTabId] ?? false;
+  }
+
+  String? _getCurrentTabErrorState() {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return null;
+    return _tabErrorStates[currentTabId];
+  }
+
+  ProcessingResult? _getCurrentTabResultState() {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return null;
+    return _tabResultStates[currentTabId];
+  }
+
+  bool _getCurrentTabProcessingState() {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return false;
+    return _tabProcessingStates[currentTabId] ?? false;
+  }
+
+  void _setCurrentTabLoadingState(bool loading) {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return;
+    _tabLoadingStates[currentTabId] = loading;
+    notifyListeners();
+  }
+
+  void _setCurrentTabErrorState(String? error) {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return;
+    _tabErrorStates[currentTabId] = error;
+    notifyListeners();
+  }
+
+  void _setCurrentTabResultState(ProcessingResult? result) {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return;
+    _tabResultStates[currentTabId] = result;
+    notifyListeners();
+  }
+
+  void _setCurrentTabProcessingState(bool processing) {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) return;
+    _tabProcessingStates[currentTabId] = processing;
+    notifyListeners();
+  }
+
+  // Streams - use tab-specific streams for better isolation
+  Stream<ProcessingProgress> get progressStream {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) {
+      return _processingService.progressStream; // Fallback to global stream
+    }
+    return _processingService.getTabProgressStream(currentTabId);
+  }
+  
+  Stream<List<ApiResult>> get resultsStream {
+    final currentTabId = currentTab?.id;
+    if (currentTabId == null) {
+      return _processingService.resultsStream; // Fallback to global stream
+    }
+    return _processingService.getTabResultsStream(currentTabId);
+  }
 
   TabAppProvider() {
     _initialize();
   }
 
   Future<void> _initialize() async {
-    _setLoading(true);
+    _setCurrentTabLoadingState(true);
     try {
       // Load auto-save preference from app settings
       try {
@@ -55,11 +122,11 @@ class TabAppProvider extends ChangeNotifier {
       await _tabManager.loadTabs();
       // Listen to tab manager changes for auto-save
       _tabManager.addListener(_onTabManagerChanged);
-      _clearError();
+      _setCurrentTabErrorState(null);
     } catch (e) {
-      _setError('Failed to initialize tabs: $e');
+      _setCurrentTabErrorState('Failed to initialize tabs: $e');
     } finally {
-      _setLoading(false);
+      _setCurrentTabLoadingState(false);
     }
   }
 
@@ -97,6 +164,12 @@ class TabAppProvider extends ChangeNotifier {
   }
 
   void closeTab(String tabId) {
+    // Clean up tab-specific states when closing a tab
+    _tabLoadingStates.remove(tabId);
+    _tabErrorStates.remove(tabId);
+    _tabResultStates.remove(tabId);
+    _tabProcessingStates.remove(tabId);
+    
     _tabManager.closeTab(tabId);
     notifyListeners();
     if (_autoSaveTabs) _scheduleAutoSave();
@@ -104,6 +177,7 @@ class TabAppProvider extends ChangeNotifier {
 
   void switchToTab(String tabId) {
     _tabManager.switchToTab(tabId);
+    // Don't clear global processing state - let it continue in background
     notifyListeners();
     if (_autoSaveTabs) _scheduleAutoSave();
   }
@@ -124,32 +198,32 @@ class TabAppProvider extends ChangeNotifier {
   Future<void> saveCurrentTabConfig(ApiConfig config) async {
     if (currentTab == null) return;
 
-    _setLoading(true);
+    _setCurrentTabLoadingState(true);
     try {
       _tabManager.updateTabConfig(currentTab!.id, config);
       await _tabManager.saveTabs();
-      _clearError();
+      _setCurrentTabErrorState(null);
       notifyListeners();
     } catch (e) {
-      _setError('Failed to save configuration: $e');
+      _setCurrentTabErrorState('Failed to save configuration: $e');
     } finally {
-      _setLoading(false);
+      _setCurrentTabLoadingState(false);
     }
   }
 
   Future<void> resetCurrentTabConfig() async {
     if (currentTab == null) return;
 
-    _setLoading(true);
+    _setCurrentTabLoadingState(true);
     try {
       _tabManager.updateTabConfig(currentTab!.id, const ApiConfig());
       await _tabManager.saveTabs();
-      _clearError();
+      _setCurrentTabErrorState(null);
       notifyListeners();
     } catch (e) {
-      _setError('Failed to reset configuration: $e');
+      _setCurrentTabErrorState('Failed to reset configuration: $e');
     } finally {
-      _setLoading(false);
+      _setCurrentTabLoadingState(false);
     }
   }
 
@@ -176,8 +250,10 @@ class TabAppProvider extends ChangeNotifier {
       throw Exception('Configuration is invalid. Please check your settings.');
     }
 
-    _setLoading(true);
-    _clearError();
+    _setCurrentTabLoadingState(true);
+    _setCurrentTabProcessingState(true);
+    _setCurrentTabErrorState(null);
+    _setCurrentTabResultState(null); // Clear previous result when starting new processing
 
     try {
       final result = await _processingService.processData(
@@ -189,38 +265,30 @@ class TabAppProvider extends ChangeNotifier {
         tabCreatedAt: currentTab!.createdAt,
       );
 
-      _lastResult = result;
+      _setCurrentTabResultState(result);
       return result;
     } catch (e) {
-      _setError('Processing failed: $e');
+      _setCurrentTabErrorState('Processing failed: $e');
       rethrow;
     } finally {
-      _setLoading(false);
+      _setCurrentTabLoadingState(false);
+      _setCurrentTabProcessingState(false);
     }
   }
 
   void cancelProcessing() {
-    _processingService.cancelProcessing();
+    final currentTabId = currentTab?.id;
+    if (currentTabId != null) {
+      _processingService.cancelProcessing(currentTabId);
+    } else {
+      _processingService.cancelProcessing(); // Cancel all
+    }
+    _setCurrentTabProcessingState(false);
   }
 
   // Error handling
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
-  void _setError(String error) {
-    _error = error;
-    notifyListeners();
-  }
-
-  void _clearError() {
-    _error = null;
-    notifyListeners();
-  }
-
   void clearError() {
-    _clearError();
+    _setCurrentTabErrorState(null);
   }
 
   @override

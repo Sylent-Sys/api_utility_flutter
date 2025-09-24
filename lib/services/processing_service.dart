@@ -18,23 +18,40 @@ class ProcessingService {
   final HistoryService _historyService = HistoryService.instance;
   final Uuid _uuid = const Uuid();
 
-  StreamController<ProcessingProgress>? _progressController;
-  StreamController<List<ApiResult>>? _resultsController;
+  // Support for multiple concurrent processing sessions
+  final Map<String, StreamController<ProcessingProgress>> _progressControllers = {};
+  final Map<String, StreamController<List<ApiResult>>> _resultsControllers = {};
+  final Map<String, bool> _processingStates = {};
+  final Map<String, bool> _cancelledStates = {};
 
-  bool _isProcessing = false;
-  bool _isCancelled = false;
+  // Global streams for backward compatibility
+  StreamController<ProcessingProgress>? _globalProgressController;
+  StreamController<List<ApiResult>>? _globalResultsController;
 
   Stream<ProcessingProgress> get progressStream {
-    _progressController ??= StreamController<ProcessingProgress>.broadcast();
-    return _progressController!.stream;
+    _globalProgressController ??= StreamController<ProcessingProgress>.broadcast();
+    return _globalProgressController!.stream;
   }
 
   Stream<List<ApiResult>> get resultsStream {
-    _resultsController ??= StreamController<List<ApiResult>>.broadcast();
-    return _resultsController!.stream;
+    _globalResultsController ??= StreamController<List<ApiResult>>.broadcast();
+    return _globalResultsController!.stream;
   }
 
-  bool get isProcessing => _isProcessing;
+  bool get isProcessing => _processingStates.values.any((processing) => processing);
+
+  // New methods for tab-specific processing
+  bool isTabProcessing(String tabId) => _processingStates[tabId] ?? false;
+  
+  Stream<ProcessingProgress> getTabProgressStream(String tabId) {
+    _progressControllers[tabId] ??= StreamController<ProcessingProgress>.broadcast();
+    return _progressControllers[tabId]!.stream;
+  }
+
+  Stream<List<ApiResult>> getTabResultsStream(String tabId) {
+    _resultsControllers[tabId] ??= StreamController<List<ApiResult>>.broadcast();
+    return _resultsControllers[tabId]!.stream;
+  }
 
   Future<ProcessingResult> processData({
     required ApiConfig config,
@@ -44,19 +61,27 @@ class ProcessingService {
     String? tabName,
     DateTime? tabCreatedAt,
   }) async {
-    if (_isProcessing) {
-      throw Exception('Processing is already in progress');
+    // Use tabId as session identifier, fallback to 'default' for backward compatibility
+    final sessionId = tabId ?? 'default';
+    
+    if (_processingStates[sessionId] == true) {
+      throw Exception('Processing is already in progress for this tab');
     }
 
-    _isProcessing = true;
-    _isCancelled = false;
+    _processingStates[sessionId] = true;
+    _cancelledStates[sessionId] = false;
 
     try {
-      _progressController ??= StreamController<ProcessingProgress>.broadcast();
-      _resultsController ??= StreamController<List<ApiResult>>.broadcast();
+      // Initialize session-specific controllers
+      _progressControllers[sessionId] ??= StreamController<ProcessingProgress>.broadcast();
+      _resultsControllers[sessionId] ??= StreamController<List<ApiResult>>.broadcast();
+      
+      // Also initialize global controllers for backward compatibility
+      _globalProgressController ??= StreamController<ProcessingProgress>.broadcast();
+      _globalResultsController ??= StreamController<List<ApiResult>>.broadcast();
 
       // Read input data
-      _updateProgress(0, 'Reading input file...', 0, 0);
+      _updateProgress(sessionId, 0, 'Reading input file...', 0, 0);
       final data = await _fileService.readDataFile(
         inputFilePath,
         testRows: testRows,
@@ -73,6 +98,7 @@ class ProcessingService {
       int errorCount = 0;
 
       _updateProgress(
+        sessionId,
         10,
         'Starting API processing...',
         processedRows,
@@ -84,12 +110,13 @@ class ProcessingService {
       final batches = _createBatches(data, batchSize);
 
       for (int batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        if (_isCancelled) {
+        if (_cancelledStates[sessionId] == true) {
           throw Exception('Processing cancelled by user');
         }
 
         final batch = batches[batchIndex];
         _updateProgress(
+          sessionId,
           10 + (batchIndex * 80 / batches.length),
           'Processing batch ${batchIndex + 1}/${batches.length}...',
           processedRows,
@@ -110,10 +137,11 @@ class ProcessingService {
         }
 
         processedRows += batch.length;
-        _resultsController!.add(List.from(results));
+        _resultsControllers[sessionId]!.add(List.from(results));
+        _globalResultsController?.add(List.from(results));
       }
 
-      _updateProgress(95, 'Saving results...', processedRows, totalRows);
+      _updateProgress(sessionId, 95, 'Saving results...', processedRows, totalRows);
 
       // Save results
       final outputPath = await _fileService.saveResults(
@@ -145,7 +173,7 @@ class ProcessingService {
 
       await _historyService.addToHistory(history);
 
-      _updateProgress(100, 'Processing completed!', processedRows, totalRows);
+      _updateProgress(sessionId, 100, 'Processing completed!', processedRows, totalRows);
 
       return ProcessingResult(
         success: true,
@@ -156,7 +184,7 @@ class ProcessingService {
         outputPath: outputPath,
       );
     } catch (e) {
-      _updateProgress(0, 'Error: $e', 0, 0);
+      _updateProgress(sessionId, 0, 'Error: $e', 0, 0);
       return ProcessingResult(
         success: false,
         error: e.toString(),
@@ -166,7 +194,7 @@ class ProcessingService {
         results: [],
       );
     } finally {
-      _isProcessing = false;
+      _processingStates[sessionId] = false;
     }
   }
 
@@ -193,6 +221,7 @@ class ProcessingService {
   }
 
   void _updateProgress(
+    String sessionId,
     double percentage,
     String message,
     int processed,
@@ -204,18 +233,71 @@ class ProcessingService {
       processedRows: processed,
       totalRows: total,
     );
-    _progressController?.add(progress);
+    
+    // Update session-specific progress
+    _progressControllers[sessionId]?.add(progress);
+    
+    // Also update global progress for backward compatibility
+    _globalProgressController?.add(progress);
   }
 
-  void cancelProcessing() {
-    _isCancelled = true;
+  void cancelProcessing([String? tabId]) {
+    if (tabId != null) {
+      _cancelledStates[tabId] = true;
+    } else {
+      // Cancel all processing sessions
+      for (final key in _cancelledStates.keys) {
+        _cancelledStates[key] = true;
+      }
+    }
+  }
+
+  void clearProcessingState([String? tabId]) {
+    if (tabId != null) {
+      _processingStates[tabId] = false;
+      _cancelledStates[tabId] = false;
+      // Clear any pending progress/results for this tab
+      _progressControllers[tabId]?.add(ProcessingProgress(
+        percentage: 0,
+        message: '',
+        processedRows: 0,
+        totalRows: 0,
+      ));
+    } else {
+      // Clear all processing states
+      _processingStates.clear();
+      _cancelledStates.clear();
+      // Clear global progress
+      _globalProgressController?.add(ProcessingProgress(
+        percentage: 0,
+        message: '',
+        processedRows: 0,
+        totalRows: 0,
+      ));
+    }
   }
 
   void dispose() {
-    _progressController?.close();
-    _resultsController?.close();
-    _progressController = null;
-    _resultsController = null;
+    // Close all session-specific controllers
+    for (final controller in _progressControllers.values) {
+      controller.close();
+    }
+    for (final controller in _resultsControllers.values) {
+      controller.close();
+    }
+    
+    // Close global controllers
+    _globalProgressController?.close();
+    _globalResultsController?.close();
+    
+    // Clear all maps
+    _progressControllers.clear();
+    _resultsControllers.clear();
+    _processingStates.clear();
+    _cancelledStates.clear();
+    
+    _globalProgressController = null;
+    _globalResultsController = null;
   }
 }
 

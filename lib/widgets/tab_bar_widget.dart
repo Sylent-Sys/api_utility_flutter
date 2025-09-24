@@ -50,7 +50,10 @@ class TabBarWidget extends StatelessWidget {
   }
 
   Widget _buildTab(BuildContext context, TabData tab, bool isActive, TabAppProvider provider, int displayIndex, AppSettingsProvider settings) {
+    final GlobalKey tabKey = GlobalKey();
+    
     return Container(
+      key: tabKey,
       constraints: const BoxConstraints(minWidth: 120, maxWidth: 200),
       child: Material(
         color: isActive 
@@ -58,7 +61,7 @@ class TabBarWidget extends StatelessWidget {
             : Colors.transparent,
         child: InkWell(
           onTap: () => provider.switchToTab(tab.id),
-          onSecondaryTap: () => _showTabContextMenu(context, tab, provider),
+          onSecondaryTap: () => _showTabContextMenu(context, tab, provider, tabKey),
           child: Container(
             height: settings.tabHeight - 8,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -138,58 +141,91 @@ class TabBarWidget extends StatelessWidget {
     );
   }
 
-  void _showTabContextMenu(BuildContext context, TabData tab, TabAppProvider provider) {
+  void _showTabContextMenu(BuildContext context, TabData tab, TabAppProvider provider, GlobalKey tabKey) {
+    // Get the position of the specific tab that was clicked
+    final RenderBox? renderBox = tabKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      // Fallback to default position if we can't get the render box
+      showMenu<String>(
+        context: context,
+        position: const RelativeRect.fromLTRB(100, 100, 0, 0),
+        items: _buildMenuItems(provider),
+      ).then((value) {
+        if (context.mounted) {
+          _handleMenuSelection(value, context, tab, provider);
+        }
+      });
+      return;
+    }
+    
+    final position = renderBox.localToGlobal(Offset.zero);
+    
     showMenu<String>(
       context: context,
-      position: const RelativeRect.fromLTRB(100, 100, 0, 0),
-      items: [
-        const PopupMenuItem(
-          value: 'rename',
-          child: Row(
-            children: [
-              Icon(Icons.edit, size: 18),
-              SizedBox(width: 8),
-              Text('Rename'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'duplicate',
-          child: Row(
-            children: [
-              Icon(Icons.copy, size: 18),
-              SizedBox(width: 8),
-              Text('Duplicate'),
-            ],
-          ),
-        ),
-        if (provider.tabManager.tabs.length > 1)
-          const PopupMenuItem(
-            value: 'close',
-            child: Row(
-              children: [
-                Icon(Icons.close, size: 18),
-                SizedBox(width: 8),
-                Text('Close'),
-              ],
-            ),
-          ),
-      ],
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy + 40, // Offset sedikit ke bawah dari tab
+        position.dx + 200,
+        position.dy + 200,
+      ),
+      items: _buildMenuItems(provider),
     ).then((value) {
-      if (value != null && context.mounted) {
-        switch (value) {
-          case 'rename':
-            _showRenameDialog(context, tab, provider);
-            break;
-          case 'duplicate':
-            provider.duplicateTab(tab.id);
-            break;
-          case 'close':
-            provider.closeTab(tab.id);
-            break;
-        }
+      if (context.mounted) {
+        _handleMenuSelection(value, context, tab, provider);
       }
     });
+  }
+
+  List<PopupMenuEntry<String>> _buildMenuItems(TabAppProvider provider) {
+    return [
+      const PopupMenuItem(
+        value: 'rename',
+        child: Row(
+          children: [
+            Icon(Icons.edit, size: 18),
+            SizedBox(width: 8),
+            Text('Rename'),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'duplicate',
+        child: Row(
+          children: [
+            Icon(Icons.copy, size: 18),
+            SizedBox(width: 8),
+            Text('Duplicate'),
+          ],
+        ),
+      ),
+      if (provider.tabManager.tabs.length > 1)
+        const PopupMenuItem(
+          value: 'close',
+          child: Row(
+            children: [
+              Icon(Icons.close, size: 18),
+              SizedBox(width: 8),
+              Text('Close'),
+            ],
+          ),
+        ),
+    ];
+  }
+
+  void _handleMenuSelection(String? value, BuildContext context, TabData tab, TabAppProvider provider) {
+    if (value != null && context.mounted) {
+      switch (value) {
+        case 'rename':
+          _showRenameDialog(context, tab, provider);
+          break;
+        case 'duplicate':
+          provider.duplicateTab(tab.id);
+          break;
+        case 'close':
+          provider.closeTab(tab.id);
+          break;
+      }
+    }
   }
 
   void _showRenameDialog(BuildContext context, TabData tab, TabAppProvider provider) {
