@@ -183,7 +183,7 @@ class _TabProcessingScreenState extends State<TabProcessingScreen> {
             ElevatedButton.icon(
               onPressed: provider.isProcessing ? null : _selectFile,
               icon: const Icon(Icons.folder_open),
-              label: const Text('Select CSV/Excel File'),
+              label: const Text('Select CSV/Excel/JSON File'),
             ),
           ],
         ),

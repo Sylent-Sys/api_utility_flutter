@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
@@ -101,6 +102,41 @@ class FileService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> readJsonFile(
+    String filePath, {
+    int? testRows,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        throw Exception('File does not exist: $filePath');
+      }
+
+      final content = await file.readAsString();
+      final decoded = json.decode(content);
+
+      if (decoded is! List) {
+        throw Exception('JSON root must be an array of objects');
+      }
+
+      final maxRows = testRows != null && testRows > 0 ? testRows : decoded.length;
+      final result = <Map<String, dynamic>>[];
+
+      for (int i = 0; i < maxRows && i < decoded.length; i++) {
+        final item = decoded[i];
+        if (item is Map<String, dynamic>) {
+          result.add(Map<String, dynamic>.from(item));
+        } else {
+          throw Exception('JSON array must contain objects at index $i');
+        }
+      }
+
+      return result;
+    } catch (e) {
+      throw Exception('Failed to read JSON file: $e');
+    }
+  }
+
   Future<List<Map<String, dynamic>>> readDataFile(
     String filePath, {
     int? testRows,
@@ -113,6 +149,8 @@ class FileService {
       case 'xlsx':
       case 'xlsm':
         return readExcelFile(filePath, testRows: testRows);
+      case 'json':
+        return readJsonFile(filePath, testRows: testRows);
       default:
         // Try CSV as fallback
         return readCsvFile(filePath, testRows: testRows);
@@ -123,7 +161,7 @@ class FileService {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: allowedExtensions ?? ['csv', 'xlsx', 'xlsm'],
+        allowedExtensions: allowedExtensions ?? ['csv', 'xlsx', 'xlsm', 'json'],
         allowMultiple: false,
       );
 
