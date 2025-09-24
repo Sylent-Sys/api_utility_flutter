@@ -19,6 +19,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _searchQuery = '';
   String _sortBy = 'newest'; // newest, oldest, success_rate, error_rate
   StreamSubscription<List<ProcessingHistory>>? _historySubscription;
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void dispose() {
     _historySubscription?.cancel();
+    _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -79,7 +81,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _setupAutoRefresh() {
     // Auto-refresh every 30 seconds when screen is active
-    Timer.periodic(const Duration(seconds: 30), (timer) {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _refreshHistory();
       } else {
