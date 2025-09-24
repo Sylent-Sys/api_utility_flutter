@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config.dart';
 import '../providers/app_provider.dart';
+import '../utils/validation_utils.dart';
+import '../utils/ui_utils.dart';
+import '../utils/config_utils.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -24,7 +27,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
   late TextEditingController _maxRetriesController;
   late TextEditingController _stringKeysController;
 
-  String _authMethod = 'bearer';
+  String _authMethod = 'none';
   String _requestMethod = 'GET';
   bool _didInitialSync = false;
 
@@ -151,12 +154,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
             hintText: 'http://localhost:7071/api',
             border: OutlineInputBorder(),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Base URL is required';
-            }
-            return null;
-          },
+          validator: (value) => ValidationUtils.validateUrl(value, fieldName: 'Base URL'),
+          onChanged: (value) => _autoSaveConfig(),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -166,12 +165,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
             hintText: '/FYP/Bengkel/AttendanceMonitoring/Create',
             border: OutlineInputBorder(),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Endpoint path is required';
-            }
-            return null;
-          },
+          validator: (value) => ValidationUtils.validateRequired(value, fieldName: 'Endpoint path'),
+          onChanged: (value) => _autoSaveConfig(),
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
@@ -188,6 +183,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             setState(() {
               _requestMethod = value!;
             });
+            _autoSaveConfig();
           },
         ),
       ],
@@ -213,6 +209,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             setState(() {
               _authMethod = value!;
             });
+            _autoSaveConfig();
           },
         ),
         const SizedBox(height: 16),
@@ -224,12 +221,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
               border: OutlineInputBorder(),
             ),
             obscureText: true,
-            validator: (value) {
-              if (_authMethod == 'bearer' && (value == null || value.isEmpty)) {
-                return 'Token is required for Bearer authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'bearer'),
+            onChanged: (value) => _autoSaveConfig(),
           ),
         ] else if (_authMethod == 'api_key') ...[
           TextFormField(
@@ -239,13 +232,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
               border: OutlineInputBorder(),
             ),
             obscureText: true,
-            validator: (value) {
-              if (_authMethod == 'api_key' &&
-                  (value == null || value.isEmpty)) {
-                return 'API Key is required for API Key authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'api_key'),
+            onChanged: (value) => _autoSaveConfig(),
           ),
         ] else if (_authMethod == 'basic') ...[
           TextFormField(
@@ -254,12 +242,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
               labelText: 'Username',
               border: OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (_authMethod == 'basic' && (value == null || value.isEmpty)) {
-                return 'Username is required for Basic authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'basic'),
+            onChanged: (value) => _autoSaveConfig(),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -269,12 +253,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
               border: OutlineInputBorder(),
             ),
             obscureText: true,
-            validator: (value) {
-              if (_authMethod == 'basic' && (value == null || value.isEmpty)) {
-                return 'Password is required for Basic authentication';
-              }
-              return null;
-            },
+            validator: (value) => ValidationUtils.validatePassword(value, _authMethod),
+            onChanged: (value) => _autoSaveConfig(),
           ),
         ],
       ],
@@ -294,16 +274,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Timeout is required';
-                  }
-                  final timeout = int.tryParse(value);
-                  if (timeout == null || timeout <= 0) {
-                    return 'Timeout must be a positive number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validatePositiveInteger(value, fieldName: 'Timeout'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
             const SizedBox(width: 16),
@@ -315,16 +287,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Batch size is required';
-                  }
-                  final batchSize = int.tryParse(value);
-                  if (batchSize == null || batchSize <= 0) {
-                    return 'Batch size must be a positive number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validatePositiveInteger(value, fieldName: 'Batch size'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
           ],
@@ -340,16 +304,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Rate limit is required';
-                  }
-                  final rateLimit = double.tryParse(value);
-                  if (rateLimit == null || rateLimit < 0) {
-                    return 'Rate limit must be a non-negative number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validateNonNegativeDouble(value, fieldName: 'Rate limit'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
             const SizedBox(width: 16),
@@ -361,16 +317,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Max retries is required';
-                  }
-                  final maxRetries = int.tryParse(value);
-                  if (maxRetries == null || maxRetries < 0) {
-                    return 'Max retries must be a non-negative number';
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validateNonNegativeInteger(value, fieldName: 'Max retries'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
           ],
@@ -383,6 +331,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             hintText: 'id, name, email',
             border: OutlineInputBorder(),
           ),
+          onChanged: (value) => _autoSaveConfig(),
         ),
       ],
     );
@@ -452,27 +401,49 @@ class _ConfigScreenState extends State<ConfigScreen> {
       return;
     }
 
-    final config = ApiConfig(
+    final config = _buildConfigFromForm();
+    
+    // Check for validation errors
+    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
+    if (validationErrors.isNotEmpty) {
+      UIUtils.showValidationErrorSnackBar(context, validationErrors);
+      return;
+    }
+
+    // Show success message
+    UIUtils.showSuccessSnackBar(context, 'Configuration saved successfully!');
+
+    context.read<AppProvider>().saveConfig(config);
+  }
+
+  /// Auto-save configuration when form fields change
+  void _autoSaveConfig() {
+    final config = _buildConfigFromForm();
+    
+    // Only auto-save if the configuration is valid
+    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
+    if (validationErrors.isEmpty) {
+      context.read<AppProvider>().saveConfig(config);
+    }
+  }
+
+  /// Builds ApiConfig from current form values
+  ApiConfig _buildConfigFromForm() {
+    return ApiConfig(
       baseUrl: _baseUrlController.text.trim(),
       endpointPath: _endpointPathController.text.trim(),
       token: _tokenController.text.trim(),
       apiKey: _apiKeyController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
-      timeoutSec: int.parse(_timeoutController.text),
-      batchSize: int.parse(_batchSizeController.text),
-      rateLimitSecond: double.parse(_rateLimitController.text),
-      maxRetries: int.parse(_maxRetriesController.text),
+      timeoutSec: int.tryParse(_timeoutController.text) ?? 240,
+      batchSize: int.tryParse(_batchSizeController.text) ?? 10,
+      rateLimitSecond: double.tryParse(_rateLimitController.text) ?? 0.5,
+      maxRetries: int.tryParse(_maxRetriesController.text) ?? 3,
       requestMethod: _requestMethod,
       authMethod: _authMethod,
-      stringKeys: _stringKeysController.text
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList(),
+      stringKeys: ConfigUtils.parseStringKeys(_stringKeysController.text),
     );
-
-    context.read<AppProvider>().saveConfig(config);
   }
 
   void _resetConfig() {

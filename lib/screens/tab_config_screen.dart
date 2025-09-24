@@ -25,7 +25,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
   late TextEditingController _maxRetriesController;
   late TextEditingController _stringKeysController;
 
-  String _authMethod = 'bearer';
+  String _authMethod = 'none';
   String _requestMethod = 'GET';
 
   @override
@@ -174,6 +174,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             border: OutlineInputBorder(),
           ),
           validator: (value) => ValidationUtils.validateUrl(value, fieldName: 'Base URL'),
+          onChanged: (value) => _autoSaveConfig(),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -184,6 +185,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             border: OutlineInputBorder(),
           ),
           validator: (value) => ValidationUtils.validateRequired(value, fieldName: 'Endpoint path'),
+          onChanged: (value) => _autoSaveConfig(),
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
@@ -249,6 +251,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             ),
             obscureText: true,
             validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'bearer'),
+            onChanged: (value) => _autoSaveConfig(),
           ),
         ] else if (_authMethod == 'api_key') ...[
           TextFormField(
@@ -259,6 +262,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             ),
             obscureText: true,
             validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'api_key'),
+            onChanged: (value) => _autoSaveConfig(),
           ),
         ] else if (_authMethod == 'basic') ...[
           TextFormField(
@@ -268,6 +272,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
               border: OutlineInputBorder(),
             ),
             validator: (value) => ValidationUtils.validateAuthField(value, _authMethod, 'basic'),
+            onChanged: (value) => _autoSaveConfig(),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -278,6 +283,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             ),
             obscureText: true,
             validator: (value) => ValidationUtils.validatePassword(value, _authMethod),
+            onChanged: (value) => _autoSaveConfig(),
           ),
         ],
       ],
@@ -298,6 +304,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) => ValidationUtils.validatePositiveInteger(value, fieldName: 'Timeout'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
             const SizedBox(width: 16),
@@ -310,6 +317,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) => ValidationUtils.validatePositiveInteger(value, fieldName: 'Batch size'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
           ],
@@ -326,6 +334,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                 ),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 validator: (value) => ValidationUtils.validateNonNegativeDouble(value, fieldName: 'Rate limit'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
             const SizedBox(width: 16),
@@ -338,6 +347,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) => ValidationUtils.validateNonNegativeInteger(value, fieldName: 'Max retries'),
+                onChanged: (value) => _autoSaveConfig(),
               ),
             ),
           ],
@@ -350,6 +360,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
             hintText: 'id, name, email',
             border: OutlineInputBorder(),
           ),
+          onChanged: (value) => _autoSaveConfig(),
         ),
       ],
     );
@@ -394,22 +405,8 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
       return;
     }
 
-    final config = ApiConfig(
-      baseUrl: _baseUrlController.text.trim(),
-      endpointPath: _endpointPathController.text.trim(),
-      token: _tokenController.text.trim(),
-      apiKey: _apiKeyController.text.trim(),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text.trim(),
-      timeoutSec: int.parse(_timeoutController.text),
-      batchSize: int.parse(_batchSizeController.text),
-      rateLimitSecond: double.parse(_rateLimitController.text),
-      maxRetries: int.parse(_maxRetriesController.text),
-      requestMethod: _requestMethod,
-      authMethod: _authMethod,
-      stringKeys: ConfigUtils.parseStringKeys(_stringKeysController.text),
-    );
-
+    final config = _buildConfigFromForm();
+    
     // Check for validation errors
     final validationErrors = ValidationUtils.getConfigValidationErrors(config);
     if (validationErrors.isNotEmpty) {
@@ -421,6 +418,36 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
     UIUtils.showSuccessSnackBar(context, 'Configuration saved successfully!');
 
     context.read<TabAppProvider>().saveCurrentTabConfig(config);
+  }
+
+  /// Auto-save configuration when form fields change
+  void _autoSaveConfig() {
+    final config = _buildConfigFromForm();
+    
+    // Only auto-save if the configuration is valid
+    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
+    if (validationErrors.isEmpty) {
+      context.read<TabAppProvider>().saveCurrentTabConfig(config);
+    }
+  }
+
+  /// Builds ApiConfig from current form values
+  ApiConfig _buildConfigFromForm() {
+    return ApiConfig(
+      baseUrl: _baseUrlController.text.trim(),
+      endpointPath: _endpointPathController.text.trim(),
+      token: _tokenController.text.trim(),
+      apiKey: _apiKeyController.text.trim(),
+      username: _usernameController.text.trim(),
+      password: _passwordController.text.trim(),
+      timeoutSec: int.tryParse(_timeoutController.text) ?? 240,
+      batchSize: int.tryParse(_batchSizeController.text) ?? 10,
+      rateLimitSecond: double.tryParse(_rateLimitController.text) ?? 0.5,
+      maxRetries: int.tryParse(_maxRetriesController.text) ?? 3,
+      requestMethod: _requestMethod,
+      authMethod: _authMethod,
+      stringKeys: ConfigUtils.parseStringKeys(_stringKeysController.text),
+    );
   }
 
   void _resetConfig() async {

@@ -46,7 +46,7 @@ class ApiConfig {
     this.rateLimitSecond = 0.5,
     this.maxRetries = 3,
     this.requestMethod = 'GET',
-    this.authMethod = 'bearer',
+    this.authMethod = 'none',
     this.customHeaders = const {'Content-Type': 'application/json'},
   });
 
@@ -130,7 +130,7 @@ class ApiConfig {
       rateLimitSecond: (json['rateLimitSecond'] ?? 0.5).toDouble(),
       maxRetries: json['maxRetries'] ?? 3,
       requestMethod: json['requestMethod'] ?? 'GET',
-      authMethod: json['authMethod'] ?? 'bearer',
+      authMethod: json['authMethod'] ?? 'none',
       customHeaders: Map<String, String>.from(
         json['customHeaders'] ?? {'Content-Type': 'application/json'},
       ),
