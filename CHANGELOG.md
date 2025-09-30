@@ -1,3 +1,12 @@
+## [v2.3.0] - 2025-09-30
+
+### minor version bump
+- Version bumped from 2.2.1+10 to 2.3.0+11
+- Automated release build
+
+### Changes
+- See commit history for detailed changes
+
 ## [v2.2.1] - 2025-09-24
 
 ### patch version bump
