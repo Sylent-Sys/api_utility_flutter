@@ -1,3 +1,25 @@
+## [Unreleased]
+
+### Added
+- **Auto-Update Feature**: Aplikasi sekarang dapat memeriksa update secara otomatis
+  - Automatic update checking dari GitHub Releases
+  - Update notification banner di top of screen
+  - Update dialog dengan detail release notes
+  - Download dan install update dengan satu klik
+  - Configurable settings (enable/disable auto-check, interval)
+  - Support MSIX dan ZIP installer formats
+  - Manual check for updates dari Settings screen
+  - Periodic background checks sesuai interval yang dikonfigurasi
+
+### Technical
+- Added `UpdateService` untuk update logic
+- Added `UpdateProvider` untuk state management
+- Added `UpdateBanner` widget untuk notification
+- Added `UpdateDialog` widget untuk update details
+- Added update settings section di App Settings screen
+- Added unit tests untuk update service
+- Updated documentation dengan `AUTO_UPDATE_FEATURE.md`
+
 ## [v2.3.0] - 2025-09-30
 
 ### minor version bump

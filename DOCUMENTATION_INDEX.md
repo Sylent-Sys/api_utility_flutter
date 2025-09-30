@@ -30,6 +30,7 @@ Welcome to the comprehensive documentation for API Utility Flutter v2.0.0 with M
 | [TAB_FEATURES.md](TAB_FEATURES.md) | Detailed guide to tab management features | End users |
 | [VALIDATION_FEATURES.md](VALIDATION_FEATURES.md) | Validation system and error handling | End users |
 | [TAB_HISTORY_FEATURES.md](TAB_HISTORY_FEATURES.md) | History tracking and management | End users |
+| [AUTO_UPDATE_FEATURE.md](AUTO_UPDATE_FEATURE.md) | Auto-update feature documentation | End users |
 
 ### 🔧 Technical Documentation
 | Document | Description | Audience |
@@ -54,12 +55,14 @@ Welcome to the comprehensive documentation for API Utility Flutter v2.0.0 with M
 - **Batch Processing**: Configurable batch processing with rate limiting
 - **Real-time Progress**: Live progress tracking
 - **Result Management**: View, search, and filter results
+- **Auto-Update**: Automatic update checking and installation
 
 ### New in v2.0.0
 - **Tab Management**: Add, remove, rename, duplicate tabs
 - **Tab-Specific History**: Rich history tracking per tab
 - **Real-time Validation**: Comprehensive configuration validation
 - **Enhanced UX**: Better user experience with visual indicators
+- **Auto-Update Feature**: Automatic update checking and installation
 
 ## 🚀 Getting Started
 
