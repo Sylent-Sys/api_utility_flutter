@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import '../models/config.dart';
 import '../providers/tab_app_provider.dart';
@@ -27,6 +28,7 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
 
   String _authMethod = 'none';
   String _requestMethod = 'GET';
+  Timer? _autoSaveDebounceTimer;
 
   @override
   void initState() {
@@ -64,8 +66,19 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
     _requestMethod = config.requestMethod;
   }
 
+  void _setControllerText(TextEditingController controller, String newText) {
+    if (controller.text == newText) return;
+    final collapsedAtEnd = TextSelection.collapsed(offset: newText.length);
+    controller.value = controller.value.copyWith(
+      text: newText,
+      selection: collapsedAtEnd,
+      composing: TextRange.empty,
+    );
+  }
+
   @override
   void dispose() {
+    _autoSaveDebounceTimer?.cancel();
     _baseUrlController.dispose();
     _endpointPathController.dispose();
     _tokenController.dispose();
@@ -143,17 +156,20 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
 
 
   void _syncFromProvider(ApiConfig config) {
-    _baseUrlController.text = config.baseUrl;
-    _endpointPathController.text = config.endpointPath;
-    _tokenController.text = config.token;
-    _apiKeyController.text = config.apiKey;
-    _usernameController.text = config.username;
-    _passwordController.text = config.password;
-    _timeoutController.text = config.timeoutSec.toString();
-    _batchSizeController.text = config.batchSize.toString();
-    _rateLimitController.text = config.rateLimitSecond.toString();
-    _maxRetriesController.text = config.maxRetries.toString();
-    _stringKeysController.text = ConfigUtils.stringKeysToString(config.stringKeys);
+    _setControllerText(_baseUrlController, config.baseUrl);
+    _setControllerText(_endpointPathController, config.endpointPath);
+    _setControllerText(_tokenController, config.token);
+    _setControllerText(_apiKeyController, config.apiKey);
+    _setControllerText(_usernameController, config.username);
+    _setControllerText(_passwordController, config.password);
+    _setControllerText(_timeoutController, config.timeoutSec.toString());
+    _setControllerText(_batchSizeController, config.batchSize.toString());
+    _setControllerText(_rateLimitController, config.rateLimitSecond.toString());
+    _setControllerText(_maxRetriesController, config.maxRetries.toString());
+    _setControllerText(
+      _stringKeysController,
+      ConfigUtils.stringKeysToString(config.stringKeys),
+    );
 
     _authMethod = config.authMethod;
     _requestMethod = config.requestMethod;
@@ -422,13 +438,14 @@ class _TabConfigScreenState extends State<TabConfigScreen> {
 
   /// Auto-save configuration when form fields change
   void _autoSaveConfig() {
-    final config = _buildConfigFromForm();
-    
-    // Only auto-save if the configuration is valid
-    final validationErrors = ValidationUtils.getConfigValidationErrors(config);
-    if (validationErrors.isEmpty) {
-      context.read<TabAppProvider>().saveCurrentTabConfig(config);
-    }
+    _autoSaveDebounceTimer?.cancel();
+    _autoSaveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      final config = _buildConfigFromForm();
+      final validationErrors = ValidationUtils.getConfigValidationErrors(config);
+      if (validationErrors.isEmpty) {
+        context.read<TabAppProvider>().saveCurrentTabConfig(config);
+      }
+    });
   }
 
   /// Builds ApiConfig from current form values
