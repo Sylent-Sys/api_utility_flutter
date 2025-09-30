@@ -28,6 +28,12 @@ A powerful Flutter application for processing CSV/Excel data through API calls w
 - **Pre-processing Checks**: Validation before starting data processing
 - **Visual Status Indicators**: Clear visual cues for configuration status
 
+### Auto-Update
+- **Automatic Update Checks**: Periodically checks for new versions from GitHub
+- **Update Notifications**: Banner notification when updates are available
+- **One-Click Download**: Download and install updates with a single click
+- **Configurable Settings**: Adjust update check frequency and enable/disable auto-check
+
 ### History Management
 - **Tab-Specific History**: Processing history tracked per tab
 - **Persistent History**: History remains even after tab deletion
