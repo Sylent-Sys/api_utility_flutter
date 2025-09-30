@@ -4,6 +4,7 @@ import '../providers/tab_app_provider.dart';
 import '../providers/app_settings_provider.dart';
 import '../widgets/tab_bar_widget.dart';
 import '../widgets/wrapped_tab_bar_widget.dart';
+import '../widgets/update_banner.dart';
 import 'tab_config_screen.dart';
 import 'tab_processing_screen.dart';
 import 'history_screen.dart';
@@ -53,6 +54,8 @@ class _TabHomeScreenState extends State<TabHomeScreen> {
           ),
           body: Column(
             children: [
+              // Update notification banner
+              const UpdateBanner(),
               // Only show tabs for Configuration and Processing screens
               if (_selectedIndex == 0 || _selectedIndex == 1) 
                 settingsProvider.tabWrapEnabled

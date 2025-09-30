@@ -4,6 +4,8 @@ import '../services/config_service.dart';
 import '../services/file_service.dart';
 import '../providers/tab_app_provider.dart';
 import '../providers/app_settings_provider.dart';
+import '../providers/update_provider.dart';
+import '../widgets/update_dialog.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -38,6 +40,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 _buildTabSettingsSection(settingsProvider),
                 const SizedBox(height: 24),
                 _buildDisplaySettingsSection(settingsProvider),
+                const SizedBox(height: 24),
+                _buildUpdateSettingsSection(),
                 const SizedBox(height: 24),
                 _buildBehaviorSettingsSection(settingsProvider),
                 const SizedBox(height: 24),
@@ -179,6 +183,118 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildUpdateSettingsSection() {
+    return Consumer<UpdateProvider>(
+      builder: (context, updateProvider, child) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.system_update,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Auto Update',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                FutureBuilder<bool>(
+                  future: updateProvider.isAutoCheckEnabled(),
+                  builder: (context, snapshot) {
+                    final isEnabled = snapshot.data ?? true;
+                    return SwitchListTile(
+                      title: const Text('Cek Update Otomatis'),
+                      subtitle: const Text('Periksa update secara berkala'),
+                      value: isEnabled,
+                      onChanged: (value) async {
+                        await updateProvider.setAutoCheckEnabled(value);
+                      },
+                    );
+                  },
+                ),
+                FutureBuilder<int>(
+                  future: updateProvider.getCheckIntervalHours(),
+                  builder: (context, snapshot) {
+                    final hours = snapshot.data ?? 24;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text(
+                          'Interval Cek Update: $hours jam',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        Slider(
+                          value: hours.toDouble(),
+                          min: 1,
+                          max: 168, // 1 week
+                          divisions: 11,
+                          label: '$hours jam',
+                          onChanged: (value) async {
+                            await updateProvider.setCheckIntervalHours(value.round());
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text('Versi Saat Ini: ${updateProvider.currentVersion}'),
+                  subtitle: updateProvider.hasUpdate
+                      ? Text('Update tersedia: ${updateProvider.availableUpdate?.version}')
+                      : const Text('Aplikasi sudah versi terbaru'),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: updateProvider.isChecking
+                        ? null
+                        : () async {
+                            await updateProvider.checkForUpdates();
+                            if (updateProvider.hasUpdate && mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => const UpdateDialog(),
+                              );
+                            } else if (!updateProvider.hasUpdate && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Aplikasi sudah versi terbaru'),
+                                ),
+                              );
+                            }
+                          },
+                    icon: updateProvider.isChecking
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: Text(updateProvider.isChecking ? 'Memeriksa...' : 'Cek Update'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

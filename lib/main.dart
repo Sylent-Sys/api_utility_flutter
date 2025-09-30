@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/tab_app_provider.dart';
 import 'providers/app_settings_provider.dart';
+import 'providers/update_provider.dart';
 import 'services/config_service.dart';
 import 'screens/tab_home_screen.dart';
 import 'services/folder_structure_service.dart';
@@ -38,6 +39,7 @@ class ApiUtilityApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => TabAppProvider()),
         ChangeNotifierProvider.value(value: initialSettings),
+        ChangeNotifierProvider(create: (context) => UpdateProvider()),
       ],
       child: Consumer<AppSettingsProvider>(
         builder: (context, settings, _) {
